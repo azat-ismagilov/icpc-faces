@@ -28,7 +28,7 @@ for path in os.listdir(config.images_directory):
         for keyword in keywords:
             for prefix in teamPrefixes:
                 if keyword.startswith(prefix):
-                    realTeamName = keyword.removeprefix(prefix)
+                    realTeamName = keyword[len(prefix):]
             if '(' in keyword:
                 realParticipants.append(keyword.split('(')[0])
         total_teams += 1

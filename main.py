@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 import time
 
 from iptcinfo3 import IPTCInfo
@@ -27,6 +28,12 @@ def main():
     image_paths = find_photos_by_tag(config.images_directory, config.group_photo_tag)
     images = [ImageProcess(image_path) for image_path in image_paths]
     print("Processed all images: {}".format(time.time() - start))
+
+    with open('save.pkl', 'wb') as f:
+        pickle.dump(images, f)
+
+    with open('save.pkl', 'rb') as f:
+        images = pickle.load(f)
 
     teams_processor = TeamProcess.TeamsProcessor(config.csv_path)
     teams_processor.match_team_images(images)

@@ -30,7 +30,7 @@ def square_distance_between_centers(l_1, r_1, l_2, r_2):
     return pow((l_1 + r_1) - (l_2 + r_2), 2)
 
 
-def max_weight_matching_multigraph(M):
+def max_weight_matching_multi_graph(M):
     G = nx.Graph()
     for u, v, data in M.edges(data=True):
         if not G.has_edge(u, v):
@@ -45,16 +45,20 @@ def recognize_participants(image: ImageProcess, participants: [ParticipantInfo])
     for (index_participant, participant) in enumerate(participants):
         result = process.extract((None, participant.name), image.ocr, lambda x: x[1], scorer=fuzz.token_sort_ratio)
         for ((quadrangle, text), score) in result:
+            if score < config.min_participant_matching_score:
+                continue
             (index_face, bbox) = min(enumerate(image.face_locations),
                                      key=lambda x: square_distance_between_centers(x[1][1], x[1][3],
                                                                                    quadrangle[0][0], quadrangle[1][0]))
             M.add_edge(index_face, index_participant + len(image.face_locations), weight=score)
-    matching = max_weight_matching_multigraph(M)
+
+    matching = max_weight_matching_multi_graph(M)
     for (index_participant, index_face) in matching:
         if index_face >= len(image.face_locations):
             index_participant, index_face = index_face, index_participant
         index_participant -= len(image.face_locations)
-        bbox = image.face_locations(index_face)
+
+        bbox = image.face_locations[index_face]
         participants[index_participant].face_bbox = bbox
 
 
@@ -80,12 +84,16 @@ class TeamsProcessor:
             for text in [team.name] + [participant.name for participant in team.participants]:
                 result = process.extract((text,), ocr_candidates, lambda x: x[0], scorer=fuzz.token_sort_ratio)
                 for ((best, index_image), score) in result:
+                    if score < config.min_team_matching_score:
+                        continue
                     M.add_edge(index_team, len(self.teams) + index_image, weight=score)
-        matching = max_weight_matching_multigraph(M)
+
+        matching = max_weight_matching_multi_graph(M)
         for (index_image, index_team) in matching:
             if index_team >= len(self.teams):
                 index_image, index_team = index_team, index_image
             index_image -= len(self.teams)
+
             self.teams[index_team].image_process = images[index_image]
             recognize_participants(self.teams[index_team].image_process, self.teams[index_team].participants)
 

@@ -5,3 +5,4 @@ IPTCInfo3==2.1.4
 opencv_python_headless==4.5.4.60
 chardet~=4.0.0
 networkx~=2.8
+tqdm~=4.62.3

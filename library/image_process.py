@@ -68,6 +68,8 @@ class GroupImageProcess:
             return
         team = self.team
         image = cv2.imread(self.path)
+        if image is None or image.size == 0:
+            return
         cv2.putText(image, team.name, (100, 150),
                     cv2.FONT_HERSHEY_SIMPLEX, 5, (0, 0, 255), 5)
         for participant in team.participants:
@@ -78,8 +80,7 @@ class GroupImageProcess:
                           (right, bottom), (255, 255, 255), 5)
             cv2.putText(image, participant.name, (left, top - 20),
                         cv2.FONT_HERSHEY_DUPLEX, 3, (0, 0, 255), 4)
-        cv2.imwrite(os.path.join(output_directory,
-                    os.path.basename(self.path)), image)
+        cv2.imwrite(os.path.join(output_directory, os.path.basename(self.path)), image)
         with open(os.path.join(output_directory, os.path.basename(self.path) + ".json"), 'w') as f:
             data = {
                 'team': team.name,

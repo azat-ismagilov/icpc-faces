@@ -49,6 +49,8 @@ for path in os.listdir(config.images_directory):
 
         total_faces += len(realParticipants)
         actual = [data['people'][i] for i in range(len(data['people'])) if data['bbox'][i] is not None]
+        if len(actual) == 0:
+            continue
         for participant in realParticipants:
             inside = False
             if min([distance(participant, chel) for chel in actual]) <= 4:

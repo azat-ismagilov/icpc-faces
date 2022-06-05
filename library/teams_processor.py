@@ -54,12 +54,6 @@ def __match_participants(image: GroupImageProcess):
         return
     participants = image.team.participants
 
-    print("--------")
-    print("Team: ", image.team.name, image.team.participants)
-    print(image.ocr)
-    print(image.face_locations)
-    print("--------")
-
     M = nx.MultiGraph()
     M.add_nodes_from(range(len(participants) + len(image.face_locations)))
     for (index_participant, participant) in enumerate(participants):
@@ -87,6 +81,5 @@ def __match_participants(image: GroupImageProcess):
 def process_teams(csv_path, output_directory, images: List[GroupImageProcess]):
     teams = parse_teams_from_csv(csv_path)
     __match_team_images(images, teams)
-    os.makedirs(output_directory, exist_ok=True)
     for image in images:
         image.save(output_directory)

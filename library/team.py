@@ -19,7 +19,7 @@ def parse_teams_from_csv(csv_path) -> List[Team]:
     with open(csv_path, 'r') as csv_file:
         reader = csv.DictReader(csv_file)
         for row in reader:
-            team_participants[row['instName']].append(Participant(row['Name']))
+            team_participants[row['instName']].append(Participant(row['Name'], None))
 
     return [Team(team_name, participants)
             for team_name, participants in team_participants.items()

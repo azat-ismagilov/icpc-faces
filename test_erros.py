@@ -15,9 +15,9 @@ wrong_faces = []
 total_teams = 0
 total_faces = 0
 
-for path in os.listdir(config.images_directory):
+for path in os.listdir(config.group_images_directory):
     if path.endswith(".png") or path.endswith(".jpg") or path.endswith(".jpeg"):
-        file = os.path.join(config.images_directory, path)
+        file = os.path.join(config.group_images_directory, path)
         keywords = [keyword.decode("ISO-8859-1") for keyword in IPTCInfo(file)['keywords']]
         if 'event$Team Photos' not in keywords:
             continue
@@ -33,7 +33,7 @@ for path in os.listdir(config.images_directory):
                 realParticipants.append(keyword.split('(')[0])
         total_teams += 1
 
-        myjson = os.path.join(config.output_directory, path + '.json')
+        myjson = os.path.join(config.group_output_directory, path + '.json')
         try:
             with open(myjson, 'r') as f:
                 data = json.load(f)

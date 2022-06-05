@@ -7,7 +7,7 @@ regular_images_directory = 'regular_photos'
 regular_output_directory = 'output_regular'
 
 min_participant_matching_score = 50
-min_team_matching_score = 80
+min_team_matching_score = 50
 body_to_face_ratio = 2
 
 reader = easyocr.Reader(['en'])

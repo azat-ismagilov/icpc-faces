@@ -17,7 +17,7 @@ class Team:
 def parse_teams_from_csv(csv_path) -> List[Team]:
     team_participants = defaultdict(list)
     with open(csv_path, 'r') as csv_file:
-        reader = csv.DictReader(csv_file)
+        reader = csv.DictReader(csv_file, delimiter=';')
         for row in reader:
             team_participants[row['instName']].append(Participant(row['Name'], None))
 

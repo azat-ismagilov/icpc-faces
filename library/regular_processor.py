@@ -64,23 +64,29 @@ def __save_regular_image(path, output_directory, participants: List[Participant]
 def get_known_face_encodings(image_paths: List) -> List[KnownFace]:
     result = []
     for path in image_paths:
-        with open(path + ".json", 'r') as f:
-            data = json.load(f)
+        try:
+            with open(path + ".json", 'r') as f:
+                data = json.load(f)
 
-            participants = [Participant(name, bbox)
-                            for name, bbox in zip(data['people'], data['bbox'])
-                            if bbox is not None]
+                participants = [Participant(name, bbox)
+                                for name, bbox in zip(data['people'], data['bbox'])
+                                if bbox is not None]
 
-            image = face_recognition.load_image_file(path)
-            known_face_encodings = face_recognition.face_encodings(
-                image, [participant.face_bbox for participant in participants])
+                image = face_recognition.load_image_file(path)
+                known_face_encodings = face_recognition.face_encodings(
+                    image, [participant.face_bbox for participant in participants])
 
-            for participant, encoding in zip(participants, known_face_encodings):
-                result.append(KnownFace(participant.name, encoding))
+                for participant, encoding in zip(participants, known_face_encodings):
+                    result.append(KnownFace(participant.name, encoding))
+        except:
+            continue
     return result
 
 
 def process_regular(output_directory, known_face_encodings: List[KnownFace], image_paths: List, tolerance=0.6):
     for image_path in image_paths:
-        __process_regular_image(
-            image_path, output_directory, known_face_encodings, tolerance)
+        try:
+            __process_regular_image(
+                image_path, output_directory, known_face_encodings, tolerance)
+        except:
+            continue

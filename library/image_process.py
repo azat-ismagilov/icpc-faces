@@ -1,8 +1,6 @@
 from typing import List, Tuple
 
 import os
-import json
-import cv2
 import face_recognition
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
@@ -44,31 +42,8 @@ class GroupImageProcess:
 
         self.team = None
 
-    def __get_white_rectangles(self, im):
-        width, height = im.size
-
-        image_array = np.array(im)
-        img = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
-        img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        ret, thresh = cv2.threshold(img_grey, 180, 255, cv2.THRESH_BINARY)
-        contours, hierarchy = cv2.findContours(
-            thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        white_rectangles = []
-        for cnt in contours:
-            if cv2.contourArea(cnt) < width * height / 5 and cv2.contourArea(cnt) > width * height / 10000:
-                x, y, w, h = cv2.boundingRect(cnt)
-                left, right, top, bottom = x, x + w, y, y + h
-                white_rectangles.append((top, right, bottom, left))
-
-        return white_rectangles
-
     def __advanced_ocr(self):
         im = Image.open(self.path)
-        width, height = im.size
-
-        white_rectangles = self.__get_white_rectangles(im)
 
         ocr = []
 
@@ -77,19 +52,17 @@ class GroupImageProcess:
 
             body_left = max(0, bbox.left -
                             params.body_to_face_ratio * face_width)
-            body_right = min(width, bbox.right +
+            body_right = min(self.width, bbox.right +
                              params.body_to_face_ratio * face_width)
             body_top = bbox.bottom
-            body_bottom = height
+            body_bottom = self.height
 
-            for top, right, bottom, left in white_rectangles:
-                if body_top <= top and bottom <= body_bottom and body_left <= left and right <= body_right:
-                    cropped = im.crop((left, top, right, bottom))
+            cropped = im.crop((body_left, body_top, body_right, body_bottom))
 
-                    crop_ocr = params.readtext(np.array(cropped))
+            crop_ocr = params.readtext(np.array(cropped))
 
-                    ocr += [(Box(left + min_gx, top + min_gy, left + max_gx, top + max_gy), text)
-                            for (([min_gx, min_gy], _, [max_gx, max_gy], _), text) in crop_ocr]
+            ocr += [(Box(body_left + min_gx, body_top + min_gy, body_left + max_gx, body_top + max_gy), text)
+                    for (([min_gx, min_gy], _, [max_gx, max_gy], _), text) in crop_ocr]
 
         return ocr
 
@@ -130,6 +103,7 @@ class GroupImageProcess:
 
         rest_bbox = [face_bbox for face_bbox in self.face_locations if face_bbox not in [
             x.face_bbox for x in team.participants]]
+
         for face_bbox in rest_bbox:
             draw.rectangle(face_bbox.toPIL(), outline="red")
             tags.append("({})".format(self.__convert_bbox(face_bbox)))

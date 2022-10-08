@@ -14,7 +14,7 @@ def main():
     images = [GroupImageProcess(image_path) for image_path in tqdm(image_paths, desc="Face detection and ocr")]
     print("Processed all images: {}".format(time.time() - start))
 
-    process_teams(config.csv_path, config.group_output_directory, images)
+    process_teams(config.csv_path, config.group_output_directory, config.tags_file, images)
     print("Time elapsed: {}".format(time.time() - start))
 
 

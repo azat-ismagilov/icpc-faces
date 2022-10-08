@@ -87,10 +87,12 @@ def __match_participants(image: GroupImageProcess):
         participants[index_participant].face_bbox = bbox
 
 
-def process_teams(csv_path, output_directory, images: List[GroupImageProcess]):
+def process_teams(csv_path, output_directory, tags_file, images: List[GroupImageProcess]):
     teams = parse_teams_from_csv(csv_path)
     __match_team_images(images, teams)
     for image in tqdm(images, desc="Matching participants"):
         __match_participants(image)
+        
+    open(tags_file, 'w').close()
     for image in tqdm(images, desc="Save files"):
-        image.save(output_directory)
+        image.save(output_directory, tags_file)

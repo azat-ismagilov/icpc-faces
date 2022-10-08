@@ -3,8 +3,6 @@ import easyocr
 csv_path = 'teams.csv'
 group_images_directory = 'group_photos'
 group_output_directory = 'output_group'
-regular_images_directory = 'regular_photos'
-regular_output_directory = 'output_regular'
 tags_file = 'tags.txt'
 
 min_participant_matching_score = 50

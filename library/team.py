@@ -25,10 +25,11 @@ class Team:
 
 def parse_teams_from_csv(csv_path) -> List[Team]:
     team_participants = defaultdict(list)
-    with open(csv_path, 'r') as csv_file:
+    with open(csv_path, 'r', encoding='utf-8-sig') as csv_file:
         reader = csv.DictReader(csv_file, delimiter=config.delimeter)
         for row in reader:
             team_participants[row['team']].append(Participant(row['name'], None))
+            
 
     return [Team(team_name, participants)
             for team_name, participants in team_participants.items()

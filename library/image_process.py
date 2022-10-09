@@ -82,13 +82,16 @@ class GroupImageProcess:
         if image is None or image.size == 0:
             return
         draw = ImageDraw.Draw(image)
-        giant = ImageFont.truetype('arial.ttf', 200)
-        normal = ImageFont.truetype('arial.ttf', 50)
-        small = ImageFont.truetype('arial.ttf', 16)
+        giant = ImageFont.truetype('arial.ttf', 150)
+        normal = ImageFont.truetype('arial.ttf', 100)
+        small = ImageFont.truetype('arial.ttf', 50)
 
         tags = []
 
-        draw.text((100, 150), team.name, fill='green', font=giant)
+        draw.text((100, 100), team.name, font=giant,
+                  fill='white', stroke_width=2, stroke_fill='black')
+        draw.text((200, 250), ', '.join([participant.name for participant in team.participants]), font=small,
+                  fill='white', stroke_width=2, stroke_fill='black')
         tags.append(f'team${team.name}')
 
         # TODO: Rewrite
@@ -96,8 +99,8 @@ class GroupImageProcess:
             if face_bbox is None:
                 continue
             draw.rectangle(face_bbox.toPIL(), outline="green", width=5)
-            draw.text((face_bbox.left, face_bbox.top - 100),
-                      name, fill='green', font=normal)
+            draw.text((face_bbox.left, face_bbox.top - 100), name, font=normal,
+                      fill='white', stroke_width=2, stroke_fill='black')
 
             tags.append(f'{name}({self.__convert_bbox(face_bbox)})')
 
@@ -110,7 +113,8 @@ class GroupImageProcess:
 
         for (bbox, text) in self.ocr:
             draw.rectangle(bbox.toPIL(), outline="red")
-            draw.text((bbox.left, bbox.top - 5), text, fill='red', font=small)
+            draw.text((bbox.left, bbox.top + 200), text, font=small,
+                      fill='white', stroke_width=2, stroke_fill='black')
 
         image.save(os.path.join(output_directory, os.path.basename(self.path)))
         with open(tags_file, 'a', encoding='utf-8') as f:

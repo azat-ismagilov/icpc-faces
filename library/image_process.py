@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import os
 import json
@@ -26,7 +26,7 @@ def find_photos_by_tag(images_directory, group_photo_tag=None):
 class GroupImageProcess:
     path: str
     face_locations: List[Box]
-    ocr: List[Box]
+    ocr: List[Tuple[Box, str]]
     team: Team
     width: int
     height: int
@@ -35,8 +35,8 @@ class GroupImageProcess:
         self.path = image_path
 
         image = face_recognition.load_image_file(self.path)
-        self.face_locations = [boxFromFaceLocation(
-            location) for location in face_recognition.face_locations(image)]
+        self.face_locations = [boxFromFaceLocation(location)
+                               for location in face_recognition.face_locations(image)]
 
         self.width, self.height = Image.open(self.path).size
 
@@ -117,8 +117,8 @@ class GroupImageProcess:
 
         draw.text((100, 150), team.name, fill='green', font=giant)
         tags.append("team${}".format(team.name))
-        
-        # TODO: Rewrite 
+
+        # TODO: Rewrite
         for (name, face_bbox) in team.participants:
             if face_bbox is None:
                 continue

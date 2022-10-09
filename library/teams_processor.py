@@ -1,5 +1,5 @@
-import os
-from typing import List
+from dataclasses import dataclass
+from typing import Any, List
 
 import networkx as nx
 from thefuzz import fuzz, process
@@ -11,20 +11,31 @@ from library.image_process import GroupImageProcess
 from library.team import Team, parse_teams_from_csv
 
 
-def __square_distance_between_centers(a: Box, b: Box):
+@dataclass
+class WeightedBipartiteEdge:
+    left: int
+    right: int
+    weight: int
+    result: Any
+
+    def __iter__(self):
+        return iter((self.left, self.right, self.weight, self.result))
+
+
+def __square_distance_between_centers(a: Box, b: Box) -> float:
     return pow((a.left + a.right) - (b.left + b.right), 2)
 
 
-def __max_weight_matching_multi_graph(edges_list):
+def __max_weight_matching_multi_graph(edges_list: List[WeightedBipartiteEdge]) -> List[WeightedBipartiteEdge]:
     G = nx.Graph()
-    min_right_index = max([edge[0] for edge in edges_list]) + 1
-    for u, v, _, _ in edges_list:
-        if not G.has_edge(u, v + min_right_index):
+    min_right_index = max([edge.left for edge in edges_list]) + 1
+    for left, right, _, _ in edges_list:
+        if not G.has_edge(left, right + min_right_index):
             other_edges = [
-                edge for edge in edges_list if edge[0] == u and edge[1] == v]
-            max_edge = max(other_edges, key=lambda edge: edge[2])
-            G.add_edge(max_edge[0], max_edge[1] + min_right_index,
-                       weight=max_edge[2], result=max_edge[3])
+                edge for edge in edges_list if edge.left == left and edge.right == right]
+            heavy_edge = max(other_edges, key=lambda edge: edge.weight)
+            G.add_edge(heavy_edge.left, heavy_edge.right + min_right_index,
+                       weight=heavy_edge.weight, result=heavy_edge.result)
 
     matching = nx.max_weight_matching(G)
     edges_in_matching = []
@@ -32,7 +43,7 @@ def __max_weight_matching_multi_graph(edges_list):
         if u >= min_right_index:
             u, v = v, u
         edges_in_matching.append(
-            (u, v - min_right_index, G[u][v]['weight'], G[u][v]['result']))
+            WeightedBipartiteEdge(u, v - min_right_index, G[u][v]['weight'], G[u][v]['result']))
     return edges_in_matching
 
 
@@ -58,7 +69,7 @@ def __match_team_images(images: List[GroupImageProcess], teams: List[Team]):
             for ((_, index_image), score) in result:
                 if score < params.min_team_matching_score:
                     continue
-                edges_list.append((index_team, index_image, score, result))
+                edges_list.append(WeightedBipartiteEdge(index_team, index_image, score, result))
 
     matching = __max_weight_matching_multi_graph(edges_list)
     for (index_team, index_image, weight, result) in matching:
@@ -87,8 +98,8 @@ def __match_participants(image: GroupImageProcess):
                 if index_face == -1 or min_distance < distance:
                     min_distance = distance
                     index_face = index
-                    
-            edges_list.append((index_participant, index_face, score, result))
+
+            edges_list.append(WeightedBipartiteEdge(index_participant, index_face, score, result))
 
     if len(edges_list) == 0:
         return

@@ -10,4 +10,5 @@ reader = easyocr.Reader(['en'])
 def readtext(image):
     return reader.readtext(image, add_margin=0.2,
                            text_threshold=0.6, paragraph=True,
+                           canvas_size=1280,
                            y_ths=0.3, min_size=20)

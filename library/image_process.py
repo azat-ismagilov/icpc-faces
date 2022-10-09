@@ -89,7 +89,7 @@ class GroupImageProcess:
         tags = []
 
         draw.text((100, 150), team.name, fill='green', font=giant)
-        tags.append("team${}".format(team.name))
+        tags.append(f'team${team.name}')
 
         # TODO: Rewrite
         for (name, face_bbox) in team.participants:
@@ -99,14 +99,14 @@ class GroupImageProcess:
             draw.text((face_bbox.left, face_bbox.top - 100),
                       name, fill='green', font=normal)
 
-            tags.append("{}({})".format(name, self.__convert_bbox(face_bbox)))
+            tags.append(f'{name}({self.__convert_bbox(face_bbox)})')
 
         rest_bbox = [face_bbox for face_bbox in self.face_locations if face_bbox not in [
             x.face_bbox for x in team.participants]]
 
         for face_bbox in rest_bbox:
             draw.rectangle(face_bbox.toPIL(), outline="red")
-            tags.append("({})".format(self.__convert_bbox(face_bbox)))
+            tags.append(f'({self.__convert_bbox(face_bbox)})')
 
         for (bbox, text) in self.ocr:
             draw.rectangle(bbox.toPIL(), outline="red")
@@ -114,6 +114,5 @@ class GroupImageProcess:
 
         image.save(os.path.join(output_directory, os.path.basename(self.path)))
         with open(tags_file, 'a', encoding='utf-8') as f:
-            line = '"{}"\t'.format(
-                self.path) + ','.join(['"{}"'.format(tag) for tag in tags])
+            line = f'"{self.path}"\t' + '\t'.join([f'"{tag}"' for tag in tags])
             f.write(line)

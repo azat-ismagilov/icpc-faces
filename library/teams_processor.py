@@ -95,7 +95,7 @@ def __match_participants(image: GroupImageProcess):
                 if text_bbox.bottom < face.top:
                     continue
                 distance = __square_distance_between_centers(face, text_bbox)
-                if index_face == -1 or min_distance < distance:
+                if index_face == -1 or min_distance > distance:
                     min_distance = distance
                     index_face = index
 

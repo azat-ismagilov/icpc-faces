@@ -9,7 +9,8 @@ import numpy as np
 from iptcinfo3 import IPTCInfo
 
 import library.params as params
-from library.team import Team, Participant
+from library.rectangle import *
+from library.team import Team
 
 
 def find_photos_by_tag(images_directory, group_photo_tag=None):
@@ -24,8 +25,8 @@ def find_photos_by_tag(images_directory, group_photo_tag=None):
 
 class GroupImageProcess:
     path: str
-    face_locations: List
-    ocr: List
+    face_locations: List[Box]
+    ocr: List[Box]
     team: Team
     width: int
     height: int
@@ -34,7 +35,8 @@ class GroupImageProcess:
         self.path = image_path
 
         image = face_recognition.load_image_file(self.path)
-        self.face_locations = face_recognition.face_locations(image)
+        self.face_locations = [boxFromFaceLocation(
+            location) for location in face_recognition.face_locations(image)]
 
         self.width, self.height = Image.open(self.path).size
 
@@ -70,15 +72,14 @@ class GroupImageProcess:
 
         ocr = []
 
-        for face_location in self.face_locations:
-            (face_top, face_right, face_bottom, face_left) = face_location
-            face_width = face_right - face_left
+        for bbox in self.face_locations:
+            face_width = bbox.right - bbox.left
 
-            body_left = max(0, face_left -
+            body_left = max(0, bbox.left -
                             params.body_to_face_ratio * face_width)
-            body_right = min(width, face_right +
+            body_right = min(width, bbox.right +
                              params.body_to_face_ratio * face_width)
-            body_top = face_bottom
+            body_top = bbox.bottom
             body_bottom = height
 
             for top, right, bottom, left in white_rectangles:
@@ -87,17 +88,16 @@ class GroupImageProcess:
 
                     crop_ocr = params.readtext(np.array(cropped))
 
-                    ocr += [((left + min_gx, left + max_gx, top + min_gy, top + max_gy), text)
+                    ocr += [(Box(left + min_gx, top + min_gy, left + max_gx, top + max_gy), text)
                             for (([min_gx, min_gy], _, [max_gx, max_gy], _), text) in crop_ocr]
 
         return ocr
 
-    def __convert_bbox(self, bbox):
-        top, right, bottom, left = bbox
-        top = "%0.4x" % int(top / self.height * 65535)
-        bottom = "%0.4x" % int(bottom / self.height * 65535)
-        left = "%0.4x" % int(left / self.width * 65535)
-        right = "%0.4x" % int(right / self.width * 65535)
+    def __convert_bbox(self, bbox: Box):
+        top = "%0.4x" % int(bbox.top / self.height * 65535)
+        bottom = "%0.4x" % int(bbox.bottom / self.height * 65535)
+        left = "%0.4x" % int(bbox.left / self.width * 65535)
+        right = "%0.4x" % int(bbox.right / self.width * 65535)
         return left + top + right + bottom
 
     def save(self, output_directory, tags_file):
@@ -117,32 +117,29 @@ class GroupImageProcess:
 
         draw.text((100, 150), team.name, fill='green', font=giant)
         tags.append("team${}".format(team.name))
-
-        for participant in team.participants:
-            if participant.face_bbox is None:
+        
+        # TODO: Rewrite 
+        for (name, face_bbox) in team.participants:
+            if face_bbox is None:
                 continue
-            (top, right, bottom, left) = participant.face_bbox
-            draw.rectangle((left, top, right, bottom),
-                           outline="green", width=5)
-            draw.text((left, top - 100), participant.name,
-                      fill='green', font=normal)
+            draw.rectangle(face_bbox.toPIL(), outline="green", width=5)
+            draw.text((face_bbox.left, face_bbox.top - 100),
+                      name, fill='green', font=normal)
 
-            tags.append("{}({})".format(participant.name,
-                                        self.__convert_bbox(participant.face_bbox)))
+            tags.append("{}({})".format(name, self.__convert_bbox(face_bbox)))
 
         rest_bbox = [face_bbox for face_bbox in self.face_locations if face_bbox not in [
             x.face_bbox for x in team.participants]]
         for face_bbox in rest_bbox:
-            top, right, bottom, left = face_bbox
-            draw.rectangle((left, top, right, bottom), outline="red")
+            draw.rectangle(face_bbox.toPIL(), outline="red")
             tags.append("({})".format(self.__convert_bbox(face_bbox)))
 
-        for (quadrangle, text) in self.ocr:
-            left, right, top, bottom = quadrangle
-            draw.rectangle((left, top, right, bottom), outline="red")
-            draw.text((left, top - 5), text, fill='red', font=small)
+        for (bbox, text) in self.ocr:
+            draw.rectangle(bbox.toPIL(), outline="red")
+            draw.text((bbox.left, bbox.top - 5), text, fill='red', font=small)
 
         image.save(os.path.join(output_directory, os.path.basename(self.path)))
         with open(tags_file, 'a', encoding='utf-8') as f:
-            line = '"{}"\t'.format(self.path) + ','.join(['"{}"'.format(tag) for tag in tags])
+            line = '"{}"\t'.format(
+                self.path) + ','.join(['"{}"'.format(tag) for tag in tags])
             f.write(line)

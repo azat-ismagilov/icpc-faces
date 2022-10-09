@@ -5,7 +5,7 @@ import networkx as nx
 from thefuzz import fuzz, process
 from tqdm import tqdm
 
-import config
+import library.params as params
 from library.image_process import GroupImageProcess
 from library.team import Team, parse_teams_from_csv
 
@@ -51,7 +51,7 @@ def __match_team_images(images: List[GroupImageProcess], teams: List[Team]):
             result = process.extract(
                 (text,), ocr_candidates, lambda x: x[0], scorer=__custom_substring_scorer)
             for ((_, index_image), score) in result:
-                if score < config.min_team_matching_score:
+                if score < params.min_team_matching_score:
                     continue
                 edges_list.append((index_team, index_image, score, result))
 
@@ -70,7 +70,7 @@ def __match_participants(image: GroupImageProcess):
         result = process.extract(
             (None, participant.name), image.ocr, lambda x: x[1], scorer=__custom_substring_scorer)
         for (((left, right, top, bottom), _), score) in result:
-            if score < config.min_participant_matching_score:
+            if score < params.min_participant_matching_score:
                 continue
             faces_possible = [bbox for bbox in image.face_locations if bottom > bbox[0]]
             (index_face, bbox) = min(enumerate(faces_possible),
@@ -92,7 +92,7 @@ def process_teams(csv_path, output_directory, tags_file, images: List[GroupImage
     __match_team_images(images, teams)
     for image in tqdm(images, desc="Matching participants"):
         __match_participants(image)
-        
+
     open(tags_file, 'w').close()
     for image in tqdm(images, desc="Save files"):
         image.save(output_directory, tags_file)

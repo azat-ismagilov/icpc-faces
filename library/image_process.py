@@ -8,8 +8,8 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from iptcinfo3 import IPTCInfo
 
+import library.params as params
 from library.team import Team, Participant
-import config
 
 
 def find_photos_by_tag(images_directory, group_photo_tag=None):
@@ -75,9 +75,9 @@ class GroupImageProcess:
             face_width = face_right - face_left
 
             body_left = max(0, face_left -
-                            config.body_to_face_ratio * face_width)
+                            params.body_to_face_ratio * face_width)
             body_right = min(width, face_right +
-                             config.body_to_face_ratio * face_width)
+                             params.body_to_face_ratio * face_width)
             body_top = face_bottom
             body_bottom = height
 
@@ -85,7 +85,7 @@ class GroupImageProcess:
                 if body_top <= top and bottom <= body_bottom and body_left <= left and right <= body_right:
                     cropped = im.crop((left, top, right, bottom))
 
-                    crop_ocr = config.readtext(np.array(cropped))
+                    crop_ocr = params.readtext(np.array(cropped))
 
                     ocr += [((left + min_gx, left + max_gx, top + min_gy, top + max_gy), text)
                             for (([min_gx, min_gy], _, [max_gx, max_gy], _), text) in crop_ocr]

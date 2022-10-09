@@ -118,5 +118,5 @@ class GroupImageProcess:
 
         image.save(os.path.join(output_directory, os.path.basename(self.path)))
         with open(tags_file, 'a', encoding='utf-8') as f:
-            line = f'"{self.path}"\t' + '\t'.join([f'"{tag}"' for tag in tags])
+            line = f'"{self.path}"\t' + '\t'.join([f'"{tag}"' for tag in tags]) + '\n'
             f.write(line)

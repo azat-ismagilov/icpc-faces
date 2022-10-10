@@ -26,7 +26,7 @@ When setting up `digikam` it is important to
 
 Core organizer team doesn't change much between years. Prepare a separate folder with core org group photos tagged from last years to help the `digikam` identify people.
 
-## Team Photos
+## Team Photos -- `Azat`
 
 Another main source of information about specific WF attendees are `Team Photos`. Every team member on the team photo is expected to have a visible badge with `Badge name` and university name printed on them. If you provide `Azat` software with the list of all team members and their correct `badge name`s, the tool will identify almost all faces and corresponding people. It will write the result in a human-readable file for manual check.
 

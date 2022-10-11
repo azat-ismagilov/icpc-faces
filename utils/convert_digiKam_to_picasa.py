@@ -29,6 +29,8 @@ def main():
         et = ExifToolHelper()
 
         for file in os.listdir(args.dir):
+            if not file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                continue
             try:
                 path = os.path.join(args.dir, file)
                 picasa_faces = []

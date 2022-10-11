@@ -13,11 +13,12 @@ from library.team import Team
 
 def find_photos_by_tag(images_directory, group_photo_tag=None):
     result = []
-    for path in os.listdir(images_directory):
-        if path.endswith(".png") or path.endswith(".jpg") or path.endswith(".jpeg"):
-            file = os.path.join(images_directory, path)
-            if group_photo_tag == None or group_photo_tag in IPTCInfo(file)['keywords']:
-                result.append(file)
+    for file in os.listdir(images_directory):
+        if not file.lower().endswith(('.png', '.jpg', '.jpeg')):
+            continue
+        path = os.path.join(images_directory, file)
+        if group_photo_tag == None or group_photo_tag in IPTCInfo(path)['keywords']:
+            result.append(path)
     return result
 
 

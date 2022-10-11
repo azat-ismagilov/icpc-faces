@@ -34,7 +34,7 @@ def main():
             try:
                 path = os.path.join(args.dir, file)
                 picasa_faces = []
-                for tags in et.get_metadata(path):
+                for tags in et.get_tags(path, ['XMP:RegionName', 'XMP:RegionType', 'XMP:RegionRectangle']):
                     for name, type, rectangle_digiKam in zip(tags['XMP:RegionName'], tags['XMP:RegionType'], tags['XMP:RegionRectangle']):
                         if type != 'Face':
                             continue

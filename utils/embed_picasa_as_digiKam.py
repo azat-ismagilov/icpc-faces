@@ -15,7 +15,8 @@ def digiKam_format(picasa_format):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Embed digiKam tags from picasa file')
+        description='Embed digiKam tags from picasa file',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('tags_file', type=str,
                         help='Tags file', default='tags.txt', nargs='?')
     args = parser.parse_args()

@@ -6,7 +6,8 @@ from exiftool import ExifToolHelper
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Embed tags from file to images')
+        description='Embed tags from file to images',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('tags_file', type=str,
                         help='Tags file', default='tags.txt', nargs='?')
     args = parser.parse_args()

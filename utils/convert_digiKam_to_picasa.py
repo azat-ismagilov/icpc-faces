@@ -18,7 +18,8 @@ def picasa_format(rectangle_digiKam):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Convert digiKam tags to Picasa format')
+        description='Convert digiKam tags to Picasa format',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('dir', type=str, help='Input dir images', default='./', nargs='?')
     parser.add_argument('tags_file', type=str,
                         help='Name of the output file', default='tags.txt', nargs='?')

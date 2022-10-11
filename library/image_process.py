@@ -60,7 +60,7 @@ class GroupImageProcess:
 
             cropped = im.crop((body_left, body_top, body_right, body_bottom))
 
-            crop_ocr = params.readtext(np.array(cropped))
+            crop_ocr = params.Reader.readtext(np.array(cropped))
 
             ocr += [(Box(body_left + min_gx, body_top + min_gy, body_left + max_gx, body_top + max_gy), text)
                     for (([min_gx, min_gy], _, [max_gx, max_gy], _), text) in crop_ocr]

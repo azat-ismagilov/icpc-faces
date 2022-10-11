@@ -4,7 +4,6 @@ from typing import List
 
 import csv
 
-import config
 from library.rectangle import Box
 
 @dataclass
@@ -23,10 +22,10 @@ class Team:
     def __iter__(self):
         return iter((self.name, self.participants))
 
-def parse_teams_from_csv(csv_path) -> List[Team]:
+def parse_teams_from_csv(csv_path, delimiter) -> List[Team]:
     team_participants = defaultdict(list)
     with open(csv_path, 'r', encoding='utf-8-sig') as csv_file:
-        reader = csv.DictReader(csv_file, delimiter=config.delimeter)
+        reader = csv.DictReader(csv_file, delimiter=delimiter)
         for row in reader:
             team_participants[row['team']].append(Participant(row['name'], None))
             

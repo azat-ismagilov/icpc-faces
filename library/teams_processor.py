@@ -110,8 +110,8 @@ def __match_participants(image: GroupImageProcess):
         participants[index_participant].face_bbox = image.face_locations[index_face]
 
 
-def process_teams(csv_path, output_directory, tags_file, images: List[GroupImageProcess]):
-    teams = parse_teams_from_csv(csv_path)
+def process_teams(csv_path, delimiter, output_directory, tags_file, images: List[GroupImageProcess]):
+    teams = parse_teams_from_csv(csv_path, delimiter)
     __match_team_images(images, teams)
     for image in tqdm(images, desc="Matching participants"):
         __match_participants(image)

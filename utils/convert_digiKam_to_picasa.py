@@ -1,4 +1,5 @@
 import os
+import csv
 import argparse
 import traceback
 
@@ -23,27 +24,26 @@ def main():
                         help='Name of the output file', default='tags.txt', nargs='?')
     args = parser.parse_args()
 
-    open(args.tags_file, 'w').close()
+    with open(args.tags_file, 'w', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter='\t', quotechar='"', lineterminator='\n', quoting=csv.QUOTE_ALL)
+        et = ExifToolHelper()
 
-    et = ExifToolHelper()
-    for file in os.listdir(args.dir):
-        try:
-            path = os.path.join(args.dir, file)
-            picasa_faces = []
-            for tags in et.get_metadata(path):
-                for name, type, rectangle_digiKam in zip(tags['XMP:RegionName'], tags['XMP:RegionType'], tags['XMP:RegionRectangle']):
-                    if type != 'Face':
-                        continue
+        for file in os.listdir(args.dir):
+            try:
+                path = os.path.join(args.dir, file)
+                picasa_faces = []
+                for tags in et.get_metadata(path):
+                    for name, type, rectangle_digiKam in zip(tags['XMP:RegionName'], tags['XMP:RegionType'], tags['XMP:RegionRectangle']):
+                        if type != 'Face':
+                            continue
 
-                    picasa = picasa_format(rectangle_digiKam)
-                    picasa_faces.append(f'{name}({picasa})')
+                        picasa = picasa_format(rectangle_digiKam)
+                        picasa_faces.append(f'{name}({picasa})')
 
-            with open(args.tags_file, 'a', encoding='utf-8') as f:
-                line = f'"{path}"\t' + \
-                    '\t'.join(f'"{data}"' for data in picasa_faces) + '\n'
-                f.write(line)
-        except Exception:
-            traceback.print_exc()
+                writer.writerow([path] + picasa_faces)
+            except Exception:
+                traceback.print_exc()
+
 
 
 if __name__ == '__main__':

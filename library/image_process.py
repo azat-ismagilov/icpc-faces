@@ -73,7 +73,7 @@ class GroupImageProcess:
         right = "%0.4x" % int(bbox.right / self.width * 65535)
         return left + top + right + bottom
 
-    def save(self, output_directory, tags_file):
+    def save(self, output_directory, writer):
         os.makedirs(output_directory, exist_ok=True)
         if self.team is None:
             return
@@ -117,6 +117,5 @@ class GroupImageProcess:
                       fill='white', stroke_width=2, stroke_fill='black')
 
         image.save(os.path.join(output_directory, os.path.basename(self.path)))
-        with open(tags_file, 'a', encoding='utf-8') as f:
-            line = f'"{self.path}"\t' + '\t'.join([f'"{tag}"' for tag in tags]) + '\n'
-            f.write(line)
+
+        writer.writerow([self.path] + tags)

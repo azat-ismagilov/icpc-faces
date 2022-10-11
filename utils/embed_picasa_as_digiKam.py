@@ -1,6 +1,7 @@
 import argparse
 import traceback
 import re
+import csv
 
 from exiftool import ExifToolHelper
 
@@ -21,11 +22,11 @@ def main():
 
     et = ExifToolHelper()
     with open(args.tags_file, 'r', encoding='utf-8') as f:
-        for line in f:
+        rd = csv.reader(f, delimiter='\t', quotechar='"', lineterminator='\n')
+        for row in rd:
             try:
-                path, tags_string = line.split('\t', 1)
-                path = path[1:-1]
-                tags = tags_string.split('\t')
+                path = row[0]
+                tags = row[1:]
                 names = []
                 types = []
                 rectangles = []

@@ -5,6 +5,7 @@ import networkx as nx
 from thefuzz import fuzz, process
 from tqdm import tqdm
 
+import csv
 import library.params as params
 from library.rectangle import Box
 from library.image_process import GroupImageProcess
@@ -115,6 +116,7 @@ def process_teams(csv_path, output_directory, tags_file, images: List[GroupImage
     for image in tqdm(images, desc="Matching participants"):
         __match_participants(image)
 
-    open(tags_file, 'w').close()
-    for image in tqdm(images, desc="Save files"):
-        image.save(output_directory, tags_file)
+    with open(tags_file, 'w', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter='\t', quotechar='"', lineterminator='\n', quoting=csv.QUOTE_ALL)
+        for image in tqdm(images, desc="Save files"):
+            image.save(output_directory, writer)

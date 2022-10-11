@@ -112,11 +112,14 @@ def __match_participants(image: GroupImageProcess):
 
 def process_teams(csv_path, delimiter, output_directory, tags_file, images: List[GroupImageProcess]):
     teams = parse_teams_from_csv(csv_path, delimiter)
-    __match_team_images(images, teams)
+    with tqdm(desc="Matching teams", total=1) as pbar:
+        __match_team_images(images, teams)
+        pbar.update(1)
+
     for image in tqdm(images, desc="Matching participants"):
         __match_participants(image)
 
     with open(tags_file, 'w', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter='\t', quotechar='"', lineterminator='\n', quoting=csv.QUOTE_ALL)
-        for image in tqdm(images, desc="Save files"):
+        for image in tqdm(images, desc="Saving files"):
             image.save(output_directory, writer)

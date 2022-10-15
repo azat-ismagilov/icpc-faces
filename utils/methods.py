@@ -31,18 +31,18 @@ def set_description(path, tags):
     for tag in tags:
         if tag.startswith('photographer$'):
             photographer = tag[len('photographer$'):]
-    
+
     if photographer == None:
         return
 
     et = ExifToolHelper()
     description = ""
     for cur_description in et.get_tags(path, tags=['EXIF:ImageDescription']):
-        description += cur_description.get('EXIF:ImageDescription', "") 
-    
+        description += cur_description.get('EXIF:ImageDescription', "")
+
     if photographer in description:
         return
-    
+
     description = f'Photographer: {photographer}\n' + description
     # TODO - check where to store description for flickr
     et.set_tags(path, tags={
@@ -63,11 +63,15 @@ def embed_tags_into_photo(path, tags):
     })
 
 
-def digiKam_format(picasa_format):
+def rectangle_format(picasa_format):
     left, top, right, bottom = [int(picasa_format[i:i+4], 16) / 65535
                                 for i in range(0, len(picasa_format), 4)]
-    rectangle = [left, top, right - left, bottom - top]
-    return ', '.join(str(x) for x in rectangle)
+    return left, top, right, bottom
+
+
+def digiKam_format(picasa_format):
+    left, top, right, bottom = rectangle_format(picasa_format)
+    return ', '.join(str(x) for x in [left, top, right - left, bottom - top])
 
 
 def embed_picasa_as_digiKam(path, tags):
@@ -76,7 +80,7 @@ def embed_picasa_as_digiKam(path, tags):
     types = []
     rectangles = []
     for tag in tags:
-        match = re.match(r'"(.*)\(([a-f0-9]{16})\)"', tag)
+        match = re.match(r'(.*)\(([a-f0-9]{16})\)', tag)
         if match:
             name, picasa_format = match.groups()
 
@@ -107,7 +111,8 @@ def convert_digiKam_tags_to_picasa(path) -> List[str]:
     picasa_faces = []
     for tags in et.get_tags(path, ['XMP:RegionName', 'XMP:RegionType', 'XMP:RegionRectangle']):
         for name, type, rectangle_digiKam in zip(tags.get('XMP:RegionName', []),
-                                                 tags.get('XMP:RegionType', []),
+                                                 tags.get(
+                                                     'XMP:RegionType', []),
                                                  tags.get('XMP:RegionRectangle', [])):
             if type != 'Face':
                 continue

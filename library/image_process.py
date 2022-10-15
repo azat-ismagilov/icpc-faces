@@ -76,37 +76,40 @@ class GroupImageProcess:
 
     def save(self, output_directory, writer):
         os.makedirs(output_directory, exist_ok=True)
-        if self.team is None:
-            return
-        team = self.team
         image = Image.open(self.path)
         if image is None or image.size == 0:
             return
+
         draw = ImageDraw.Draw(image)
         giant = ImageFont.truetype('arial.ttf', 150)
         normal = ImageFont.truetype('arial.ttf', 100)
         small = ImageFont.truetype('arial.ttf', 50)
 
         tags = []
+        processed_faces = []
 
-        draw.text((100, 100), team.name, font=giant,
-                  fill='white', stroke_width=2, stroke_fill='black')
-        draw.text((200, 250), ', '.join([participant.name for participant in team.participants]), font=small,
-                  fill='white', stroke_width=2, stroke_fill='black')
-        tags.append(f'team${team.name}')
+        if self.team:
+            team = self.team
+            draw.text((100, 100), team.name, font=giant,
+                      fill='white', stroke_width=2, stroke_fill='black')
+            draw.text((200, 250), ', '.join([participant.name for participant in team.participants]), font=small,
+                      fill='white', stroke_width=2, stroke_fill='black')
+            tags.append(f'team${team.name}')
+
+            for (name, face_bbox) in team.participants:
+                if face_bbox is None:
+                    continue
+                draw.rectangle(face_bbox.toPIL(), outline="green", width=5)
+                draw.text((face_bbox.left, face_bbox.top - 100), name, font=normal,
+                          fill='white', stroke_width=2, stroke_fill='black')
+
+                tags.append(f'{name}({self.__convert_bbox(face_bbox)})')
+
+            processed_faces += [x.face_bbox for x in team.participants]
 
         # TODO: Rewrite
-        for (name, face_bbox) in team.participants:
-            if face_bbox is None:
-                continue
-            draw.rectangle(face_bbox.toPIL(), outline="green", width=5)
-            draw.text((face_bbox.left, face_bbox.top - 100), name, font=normal,
-                      fill='white', stroke_width=2, stroke_fill='black')
-
-            tags.append(f'{name}({self.__convert_bbox(face_bbox)})')
-
-        rest_bbox = [face_bbox for face_bbox in self.face_locations if face_bbox not in [
-            x.face_bbox for x in team.participants]]
+        rest_bbox = [
+            face_bbox for face_bbox in self.face_locations if face_bbox not in processed_faces]
 
         for face_bbox in rest_bbox:
             draw.rectangle(face_bbox.toPIL(), outline="red")

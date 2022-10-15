@@ -44,8 +44,11 @@ def set_description(path, tags):
         return
     
     description = f'Photographer: {photographer}\n' + description
+    # TODO - check where to store description for flickr
     et.set_tags(path, tags={
         'EXIF:ImageDescription': description,
+        'XMP:ImageDescription': description,
+        'XMP:Description': description
     })
 
 

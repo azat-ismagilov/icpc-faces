@@ -29,7 +29,7 @@ def main():
             images = pickle.load(f)
         print('You are using precalculated images info. If you want to update your images, please delete save.pkl.')
     except:
-        image_paths = find_photos_by_tag(args.input_dir)[:3]
+        image_paths = find_photos_by_tag(args.input_dir)
         images = [GroupImageProcess(image_path) for image_path in
                   tqdm(image_paths, desc="Face detection and ocr")]
         print("Processed all images: {}".format(time.time() - start))

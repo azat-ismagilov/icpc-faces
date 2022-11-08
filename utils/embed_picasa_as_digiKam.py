@@ -2,6 +2,7 @@ import csv
 import argparse
 import traceback
 import methods
+import tqdm
 
 
 def main():

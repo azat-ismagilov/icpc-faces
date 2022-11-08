@@ -15,14 +15,22 @@ def find_photos_in_directory(dir) -> List:
 
 
 def get_tags_from_path(dir, path) -> List[str]:
-    return path[len(dir):].split('/')[:-1]
+    parts = path[len(dir):].split('/')[:-1]
+    tags = ['team$' + parts[0].replace('_', ' '),
+            'photographer$', parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
+    
+    return tags
 
 
 def get_tags_from_photo(path) -> List[str]:
     et = ExifToolHelper()
     tags = []
     for cur_tags in et.get_tags(path, tags=['IPTC:Keywords']):
-        tags = cur_tags.get('IPTC:Keywords', []) + tags
+        cur_tags.get('IPTC:Keywords')
+        new_tags = cur_tags.get('IPTC:Keywords', [])
+        if type(new_tags) != list:
+            new_tags = [new_tags]
+        tags = new_tags + tags
     return tags
 
 
@@ -73,6 +81,7 @@ def digiKam_format(picasa_format):
     left, top, right, bottom = rectangle_format(picasa_format)
     return ', '.join(str(x) for x in [left, top, right - left, bottom - top])
 
+import random
 
 def embed_picasa_as_digiKam(path, tags):
     et = ExifToolHelper()
@@ -84,6 +93,8 @@ def embed_picasa_as_digiKam(path, tags):
         if match:
             name, picasa_format = match.groups()
 
+            if name == "":
+                name = str(random.randint(1, 10000))
             names.append(name)
             types.append('Face')
             rectangles.append(digiKam_format(picasa_format))

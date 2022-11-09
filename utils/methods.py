@@ -22,8 +22,12 @@ def get_tags_from_path(dir, path) -> List[str]:
     return tags
 
 
+def get_exiftool():
+    return ExifToolHelper(common_args=['-G', '-n', '-overwrite_original'])
+
+
 def get_tags_from_photo(path) -> List[str]:
-    et = ExifToolHelper()
+    et = get_exiftool()
     tags = []
     for cur_tags in et.get_tags(path, tags=['IPTC:Keywords']):
         cur_tags.get('IPTC:Keywords')
@@ -43,7 +47,7 @@ def set_description(path, tags):
     if photographer == None:
         return
 
-    et = ExifToolHelper()
+    et = get_exiftool()
     description = ""
     for cur_description in et.get_tags(path, tags=['EXIF:ImageDescription']):
         description += cur_description.get('EXIF:ImageDescription', "")
@@ -61,7 +65,7 @@ def set_description(path, tags):
 
 
 def embed_tags_into_photo(path, tags):
-    et = ExifToolHelper()
+    et = get_exiftool()
 
     tags = get_tags_from_photo(path) + tags
     tags = list(dict.fromkeys(tags))
@@ -88,7 +92,7 @@ def digiKam_format(picasa_format):
 import random
 
 def embed_picasa_as_digiKam(path, tags):
-    et = ExifToolHelper()
+    et = get_exiftool()
     names = []
     types = []
     rectangles = []
@@ -122,7 +126,7 @@ def picasa_format(rectangle_digiKam):
 
 
 def convert_digiKam_tags_to_picasa(path) -> List[str]:
-    et = ExifToolHelper()
+    et = get_exiftool()
     picasa_faces = []
     for tags in et.get_tags(path, ['XMP:RegionName', 'XMP:RegionType', 'XMP:RegionRectangle']):
         for name, type, rectangle_digiKam in zip(tags.get('XMP:RegionName', []),

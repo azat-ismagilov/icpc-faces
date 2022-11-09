@@ -4,6 +4,12 @@ import re
 from typing import List
 from exiftool import ExifToolHelper
 
+def get_list_str(inp, field):
+    tags = inp.get(field, [])
+    if type(tags) != list:
+        tags = [tags]
+    return tags
+
 
 def find_photos_in_directory(dir) -> List:
     result = []
@@ -31,10 +37,7 @@ def get_tags_from_photo(path) -> List[str]:
     tags = []
     for cur_tags in et.get_tags(path, tags=['IPTC:Keywords']):
         cur_tags.get('IPTC:Keywords')
-        new_tags = cur_tags.get('IPTC:Keywords', [])
-        if type(new_tags) != list:
-            new_tags = [new_tags]
-        tags = new_tags + tags
+        tags = get_list_str(cur_tags, 'IPTC:Keywords') + tags
     return tags
 
 
@@ -70,6 +73,8 @@ def embed_tags_into_photo(path, tags):
     tags = get_tags_from_photo(path) + tags
     tags = list(dict.fromkeys(tags))
 
+    tags = [s for s in tags if str(s).startswith("team$")]
+
     caterories = '<Categories>' + ''.join(['<Category Assigned="1">' + str(tag) + '</Category>' for tag in tags]) + '</Categories>'
 
     et.set_tags(path, tags={
@@ -89,7 +94,6 @@ def digiKam_format(picasa_format):
     left, top, right, bottom = rectangle_format(picasa_format)
     return ', '.join(str(x) for x in [left, top, right - left, bottom - top])
 
-import random
 
 def embed_picasa_as_digiKam(path, tags):
     et = get_exiftool()
@@ -129,10 +133,9 @@ def convert_digiKam_tags_to_picasa(path) -> List[str]:
     et = get_exiftool()
     picasa_faces = []
     for tags in et.get_tags(path, ['XMP:RegionName', 'XMP:RegionType', 'XMP:RegionRectangle']):
-        for name, type, rectangle_digiKam in zip(tags.get('XMP:RegionName', []),
-                                                 tags.get(
-                                                     'XMP:RegionType', []),
-                                                 tags.get('XMP:RegionRectangle', [])):
+        for name, type, rectangle_digiKam in zip(get_list_str(tags, 'XMP:RegionName'),
+                                                 get_list_str(tags, 'XMP:RegionType'),
+                                                 get_list_str(tags, 'XMP:RegionRectangle')):
             if type != 'Face':
                 continue
 

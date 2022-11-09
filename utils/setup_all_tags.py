@@ -30,6 +30,7 @@ def main():
                 embed_picasa_as_digiKam(path, tags)
                 set_description(path, tags)
                 writer.writerow([path] + tags)
+                print('.', end='', flush=True)
             except Exception:
                 print(path)
                 traceback.print_exc()

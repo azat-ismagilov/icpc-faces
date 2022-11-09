@@ -15,9 +15,9 @@ def find_photos_in_directory(dir) -> List:
 
 
 def get_tags_from_path(dir, path) -> List[str]:
-    parts = path[len(dir):].split('/')[:-1]
-    tags = ['team$' + parts[0].replace('_', ' '),
-            'photographer$', parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
+    parts = path.split('/')[:-1]
+    tags = ['album$2021', 'event$' + parts[0].replace('_', ' '),
+            'photographer$' + parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
     
     return tags
 

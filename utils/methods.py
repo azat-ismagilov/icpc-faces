@@ -66,8 +66,12 @@ def embed_tags_into_photo(path, tags):
     tags = get_tags_from_photo(path) + tags
     tags = list(dict.fromkeys(tags))
 
+    caterories = '<Categories>' + ''.join(['<Category Assigned="1">' + str(tag) + '</Category>' for tag in tags]) + '</Categories>'
+
     et.set_tags(path, tags={
         'IPTC:Keywords': tags,
+        'XMP:TagsList:': tags,
+        'XMP:Keywords': tags
     })
 
 

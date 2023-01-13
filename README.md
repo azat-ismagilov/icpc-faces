@@ -1,6 +1,8 @@
 # ICPC faces
 Automated face recognition system with badge detection
 
+Watch deployed at https://news.icpc.global/gallery/
+
 ## Contents
 1. [Requirements](#requirements)
 2. [Installation](#installation)

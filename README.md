@@ -10,6 +10,7 @@ Watch deployed at https://news.icpc.global/gallery/
 
 ## How to use
 1. [Automated face recognition and badge recognition system](teams_recognition/README.md).
+2. [Multiple scripts for easy tag manipulation](tags/README.md).
 
 ## ICPC Photo Tagging process
 

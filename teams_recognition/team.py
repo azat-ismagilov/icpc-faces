@@ -4,7 +4,7 @@ from typing import List
 
 import csv
 
-from library.rectangle import Box
+from rectangle import Box
 
 @dataclass
 class Participant:

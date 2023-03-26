@@ -3,8 +3,8 @@ import time
 import argparse
 from tqdm import tqdm
 
-from library.image_process import GroupImageProcess, find_photos_by_tag
-from library.teams_processor import process_teams
+from image_process import GroupImageProcess, find_photos_by_tag
+from teams_processor import process_teams
 
 
 def main():

@@ -6,10 +6,10 @@ from thefuzz import fuzz, process
 from tqdm import tqdm
 
 import csv
-import library.params as params
-from library.rectangle import Box
-from library.image_process import GroupImageProcess
-from library.team import Team, parse_teams_from_csv
+import params as params
+from rectangle import Box
+from image_process import GroupImageProcess
+from team import Team, parse_teams_from_csv
 
 
 @dataclass

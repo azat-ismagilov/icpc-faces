@@ -6,9 +6,9 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from iptcinfo3 import IPTCInfo
 
-import library.params as params
-from library.rectangle import *
-from library.team import Team
+import params as params
+from rectangle import *
+from team import Team
 
 
 def find_photos_by_tag(images_directory, group_photo_tag=None):

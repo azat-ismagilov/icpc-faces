@@ -4,36 +4,12 @@ Automated face recognition system with badge detection
 Watch deployed at https://news.icpc.global/gallery/
 
 ## Contents
-1. [Requirements](#requirements)
-2. [Installation](#installation)
-2. [How to use](#how-to-use)
-3. [ICPC Photo Tagging process](#icpc-photo-tagging-process)
-4. [Known issues](#known-issues)
+1. [How to use](#how-to-use)
+2. [ICPC Photo Tagging process](#icpc-photo-tagging-process)
+3. [Known issues](#known-issues)
 
-## Requirements
-- python (3.4+)
-- pip
-- cmake
-- exiftool (12.15+) (for utils) 
-- CUDA (if you want to use GPU)
-
-## Installation
-```bash
-pip3 install -r requirenments.txt
-```
-
-### For utils:
-```bash
-pip3 install -r utils/requirenments.txt
-```
-
-## How to use: 
-```bash
-python3 recognize_teams.py [-h] [--delimiter D] teams_csv input_dir [output_dir] [tags_file]
-```
-
-TODO: write instruction with the whole process
-
+## How to use
+1. [Automated face recognition and badge recognition system](teams_recognition/README.md).
 
 ## ICPC Photo Tagging process
 

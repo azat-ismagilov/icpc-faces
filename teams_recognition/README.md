@@ -12,7 +12,7 @@
 
 ## Installation
 ```bash
-pip3 install -r requirenments.txt
+pip install -r requirenments.txt
 ```
 
 ## How to use: 

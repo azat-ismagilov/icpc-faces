@@ -32,7 +32,7 @@ You can change `album$2021` tag in code, file `methods.py`.
 
 ## Installation
 ```bash
-pip install -r requirenments.txt
+pip install -r requirements.txt
 ```
 
 ## How to use

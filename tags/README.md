@@ -40,5 +40,5 @@ pip install -r requirements.txt
 1. Go to your base_folder
 2. Copy methods.py and setup_all_tags.py to this folder.
 3. Run `
-python setup_all_tags.py
+python setup_all_tags.py Photo_Tour
 `

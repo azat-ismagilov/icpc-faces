@@ -42,3 +42,40 @@ pip install -r requirements.txt
 3. Run `
 python setup_all_tags.py Photo_Tour
 `
+
+### Granular control
+
+You might want to have a lot more control with your tagging process. In that case I would recommend following approach.
+
+1. Go to `base_folder`, and copy all python files from tags directory.
+
+2. Run 
+``` bash
+python get_tags_from_paths.py Photo_Tour album$2021 tags.txt
+```
+
+This process will generate `tags.txt` file with all tags that will be imported into current files. You can manually change some entities inside.
+
+4. After that you can run 
+``` bash
+python embed_tags_info_photos.py tags.txt
+```
+ to import those tags into your photos.
+
+5. Import photos into digiKam, mark faces and export them with metadata.
+
+6. Run 
+``` bash
+python convert_digiKam_to_picasa.py Photo_Tour face_tags.txt
+```
+
+This process will convert digiKam face tags to picasa format for you to upload. You can preview those in `face_tags.txt` file before you proceed.
+
+
+7. After that you can run 
+``` bash
+python embed_tags_info_photos.py face_tags.txt
+```
+ to import face tags into your photos.
+
+8. Upload photos to flikr.

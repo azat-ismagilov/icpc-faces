@@ -32,7 +32,7 @@ def find_photos_in_directory(dir) -> List:
 
 def get_tags_from_path(dir, path) -> List[str]:
     parts = path.split('/')[:-1]
-    tags = ['album$2021', 'event$' + parts[0].replace('_', ' '),
+    tags = ['event$' + parts[0].replace('_', ' '),
             'photographer$' + parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
 
     return tags
@@ -190,8 +190,10 @@ def convert_digiKam_tags_to_picasa(path) -> List[str]:
     picasa_faces = []
     for region_info in region_infos:
         for region in region_info.xpath(".//rdf:li", namespaces=xmp_namespaces()):
-            name = region.get("{%s}PersonDisplayName" % xmp_namespaces()["mpr"])
-            rectangle_digiKam = region.get("{%s}Rectangle" % xmp_namespaces()["mpr"])
+            name = region.get("{%s}PersonDisplayName" %
+                              xmp_namespaces()["mpr"])
+            rectangle_digiKam = region.get(
+                "{%s}Rectangle" % xmp_namespaces()["mpr"])
 
             picasa = picasa_format(rectangle_digiKam)
             picasa_faces.append(f'{name}({picasa})')

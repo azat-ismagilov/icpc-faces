@@ -14,7 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('album_tag', type=str,
                         help='Album tag to add', default='album$2021', nargs='?')
     parser.add_argument('tags_file', type=str,
-                        help='Name of the debug file will ', default='tags.txt', nargs='?')
+                        help='Name of the debug file', default='tags.txt', nargs='?')
     args = parser.parse_args()
 
     with open(args.tags_file, 'w', encoding='utf-8') as f:

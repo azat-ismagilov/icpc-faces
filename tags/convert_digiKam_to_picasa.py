@@ -4,7 +4,7 @@ import traceback
 import methods
 
 
-def main():
+def convert_digiKam_to_picasa():
     parser = argparse.ArgumentParser(
         description='Convert digiKam tags to Picasa format',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -27,4 +27,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    convert_digiKam_to_picasa()

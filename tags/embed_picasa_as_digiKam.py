@@ -5,7 +5,7 @@ import methods
 import tqdm
 
 
-def main():
+def embed_picasa_as_digiKam():
     parser = argparse.ArgumentParser(
         description='Embed digiKam tags from picasa file',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -26,4 +26,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    embed_picasa_as_digiKam()

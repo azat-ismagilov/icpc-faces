@@ -4,7 +4,7 @@ import traceback
 import methods
 
 
-def main():
+def get_tags_from_path():
     parser = argparse.ArgumentParser(
         description='Get tags from path',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -27,4 +27,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    get_tags_from_path()

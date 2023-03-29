@@ -4,7 +4,7 @@ import traceback
 import methods
 
 
-def main():
+def embed_tags_into_photo():
     parser = argparse.ArgumentParser(
         description='Embed tags from file to images',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -26,4 +26,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    embed_tags_into_photo()

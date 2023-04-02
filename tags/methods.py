@@ -31,9 +31,10 @@ def find_photos_in_directory(dir) -> List:
 
 
 def get_tags_from_path(dir, path) -> List[str]:
-    parts = path.split('/')[:-1]
-    tags = ['event$' + parts[0].replace('_', ' '),
-            'photographer$' + parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
+    parts = path.split(os.sep)[:-1]
+    tags = ['event$' + parts[0].replace('_', ' ')]
+    if len(parts) > 1:
+        tags += ['photographer$' + parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
 
     return tags
 

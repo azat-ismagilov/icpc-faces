@@ -24,7 +24,7 @@ Your file structure should be organized in following way:
 
 If you do so, `image1.jpg` with have tags: `album$2021, event$Photo Tour, photographer$John Smith, tag, othertag` and `image2.jpg` with have tags `album$2021, event$Photo Tour, photographer$John Smith`.
 
-You can change `album$2021` tag in code, file `methods.py`.
+You can change `album$2021` tag as a parameter.
 
 ## Requirements
 - python (3.4+)

@@ -1,2 +1,3 @@
-iptcinfo3
+# Custom version with overwrite option https://github.com/james-see/iptcinfo3/pull/29
+iptcinfo3 @ git+https://github.com/james-see/iptcinfo3@9542c10
 lxml

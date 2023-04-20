@@ -4,6 +4,7 @@ import re
 from typing import List
 import random
 from iptcinfo3 import IPTCInfo
+import logging
 from lxml import etree
 
 
@@ -103,11 +104,11 @@ def get_xmp(path):
 
     xmp_start = jpeg_data.find(b'<x:xmpmeta')
     xmp_end = jpeg_data.find(b'</x:xmpmeta')
-    if xmp_start != -1 and xmp_end != -1:
-        xmp_str = jpeg_data[xmp_start:xmp_end + len('</x:xmpmeta>')]
-        xmp = etree.fromstring(xmp_str)
-    else:
-        xmp = None
+    if xmp_start == -1 or xmp_end == -1:
+        return None
+
+    xmp_str = jpeg_data[xmp_start:xmp_end + len('</x:xmpmeta>')]
+    xmp = etree.fromstring(xmp_str)
 
     return xmp
 
@@ -121,6 +122,9 @@ def set_xmp(path, xmp):
 
     xmp_start = jpeg_data.find(b'<x:xmpmeta')
     xmp_end = jpeg_data.find(b'</x:xmpmeta')
+    if xmp_start == -1 or xmp_end == -1:
+        return
+
     xmp_str = etree.tostring(xmp, pretty_print=True)
     jpeg_data = jpeg_data[:xmp_start] + xmp_str + \
         jpeg_data[xmp_end + len('</x:xmpmeta>'):]

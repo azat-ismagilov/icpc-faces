@@ -7,6 +7,10 @@ from iptcinfo3 import IPTCInfo
 import logging
 from lxml import etree
 
+def get_iptc_instance(path):
+    iptcinfo_logger = logging.getLogger('iptcinfo')
+    iptcinfo_logger.setLevel(logging.ERROR)
+    return IPTCInfo(path)
 
 def try_decode(s):
     try:
@@ -41,7 +45,7 @@ def get_tags_from_path(dir, path) -> List[str]:
 
 
 def get_tags_from_photo(path) -> List[str]:
-    info = IPTCInfo(path)
+    info = get_iptc_instance(path)
     return [try_decode(s) for s in info['keywords']]
 
 
@@ -55,13 +59,13 @@ def embed_tags_into_photo(path, tags):
     #     ''.join(['<Category Assigned="1">' + str(tag) +
     #             '</Category>' for tag in tags]) + '</Categories>'
 
-    info = IPTCInfo(path)
+    info = get_iptc_instance(path)
     info['keywords'] = [bytes(s, encoding="raw_unicode_escape") for s in tags]
-    info.save()
+    info.save(options=["overwrite"])
 
 
 def get_description_from_photo(path) -> str:
-    info = IPTCInfo(path)
+    info = get_iptc_instance(path)
     if info['caption/abstract'] is None:
         return ''
     return info['caption/abstract'].decode()
@@ -82,9 +86,9 @@ def set_description(path, tags):
         return
 
     description = f'Photographer: {photographer} ' + description
-    info = IPTCInfo(path)
+    info = get_iptc_instance(path)
     info['caption/abstract'] = description
-    info.save()
+    info.save(options=["overwrite"])
 
 
 def rectangle_format(picasa_format):

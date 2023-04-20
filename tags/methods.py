@@ -112,7 +112,7 @@ def get_xmp(path):
         return None
 
     xmp_str = jpeg_data[xmp_start:xmp_end + len('</x:xmpmeta>')]
-    xmp = etree.fromstring(xmp_str)
+    xmp = etree.XML(xmp_str, etree.XMLParser(remove_blank_text=True))
 
     return xmp
 

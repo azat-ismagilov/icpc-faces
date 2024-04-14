@@ -21,7 +21,7 @@ def main():
                             lineterminator='\n', quoting=csv.QUOTE_ALL)
         for path in methods.find_photos_in_directory(args.dir):
             try:
-                tags = [args.album_tag] + \
+                tags = [args.album] + \
                     methods.get_tags_from_path(args.dir, path)
                 writer.writerow(
                     [path] + tags)

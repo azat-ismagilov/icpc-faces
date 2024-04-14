@@ -21,8 +21,8 @@ def find_photos_in_directory(dir) -> List:
 
 
 def get_tags_from_path(dir, path) -> List[str]:
-    parts = path.split('/')[:-1]
-    tags = ['album$2021', 'event$' + parts[0].replace('_', ' '),
+    parts = path.split(os.sep)[:-1]
+    tags = ['event$' + parts[0].replace('_', ' '),
             'photographer$' + parts[1].replace('_', ' ').split('-')[0]] + parts[2:]
     
     return tags
@@ -33,11 +33,12 @@ def get_exiftool():
 
 
 def get_tags_from_photo(path) -> List[str]:
-    et = get_exiftool()
-    tags = []
-    for cur_tags in et.get_tags(path, tags=['IPTC:Keywords']):
-        cur_tags.get('IPTC:Keywords')
-        tags = get_list_str(cur_tags, 'IPTC:Keywords') + tags
+    with get_exiftool() as et:
+        tags = []
+        for cur_tags in et.get_tags(path, tags=['IPTC:Keywords']):
+            cur_tags.get('IPTC:Keywords')
+            tags = get_list_str(cur_tags, 'IPTC:Keywords') + tags
+        et.terminate()
     return tags
 
 
@@ -50,38 +51,39 @@ def set_description(path, tags):
     if photographer == None:
         return
 
-    et = get_exiftool()
-    description = ""
-    for cur_description in et.get_tags(path, tags=['EXIF:ImageDescription']):
-        description += cur_description.get('EXIF:ImageDescription', "")
+    with get_exiftool() as et:
+        description = ""
+        for cur_description in et.get_tags(path, tags=['EXIF:ImageDescription']):
+            description += cur_description.get('EXIF:ImageDescription', "")
 
-    if photographer in description:
-        return
+        if photographer in description:
+            return
 
-    description = f'Photographer: {photographer}\n' + description
-    # TODO - check where to store description for flickr
-    et.set_tags(path, tags={
-        'EXIF:ImageDescription': description,
-        'XMP:ImageDescription': description,
-        'XMP:Description': description
-    })
+        description = f'Photographer: {photographer}\n' + description
+        # TODO - check where to store description for flickr
+        et.set_tags(path, tags={
+            'EXIF:ImageDescription': description,
+            'XMP:ImageDescription': description,
+            'XMP:Description': description
+        })
+        et.terminate()
 
 
 def embed_tags_into_photo(path, tags):
-    et = get_exiftool()
+    with get_exiftool() as et:
+        tags = get_tags_from_photo(path) + tags
+        tags = list(dict.fromkeys(tags))
 
-    tags = get_tags_from_photo(path) + tags
-    tags = list(dict.fromkeys(tags))
+        #tags = [s for s in tags if str(s).startswith("team$")]
 
-    #tags = [s for s in tags if str(s).startswith("team$")]
+        caterories = '<Categories>' + ''.join(['<Category Assigned="1">' + str(tag) + '</Category>' for tag in tags]) + '</Categories>'
 
-    caterories = '<Categories>' + ''.join(['<Category Assigned="1">' + str(tag) + '</Category>' for tag in tags]) + '</Categories>'
-
-    et.set_tags(path, tags={
-        'IPTC:Keywords': tags,
-        'XMP:TagsList:': tags,
-        'XMP:Keywords': tags
-    })
+        et.set_tags(path, tags={
+            'IPTC:Keywords': tags,
+            'XMP:TagsList:': tags,
+            'XMP:Keywords': tags
+        })
+        et.terminate()
 
 
 def rectangle_format(picasa_format):
@@ -96,27 +98,28 @@ def digiKam_format(picasa_format):
 
 
 def embed_picasa_as_digiKam(path, tags):
-    et = get_exiftool()
-    names = []
-    types = []
-    rectangles = []
-    for tag in tags:
-        match = re.match(r'(.*)\(([a-f0-9]{16})\)', tag)
-        if match:
-            name, picasa_format = match.groups()
+    with get_exiftool() as et:
+        names = []
+        types = []
+        rectangles = []
+        for tag in tags:
+            match = re.match(r'(.*)\(([a-f0-9]{16})\)', tag)
+            if match:
+                name, picasa_format = match.groups()
 
-            if name == "":
-                name = str(random.randint(1, 10000))
-            names.append(name)
-            types.append('Face')
-            rectangles.append(digiKam_format(picasa_format))
+                if name == "":
+                    name = str(random.randint(1, 10000))
+                names.append(name)
+                types.append('Face')
+                rectangles.append(digiKam_format(picasa_format))
 
-    et.set_tags(path, tags={
-        'XMP:RegionName': names,
-        'XMP:RegionType': types,
-        'XMP:RegionRectangle': rectangles,
-        'XMP:RegionPersonDisplayName': names,
-    })
+        et.set_tags(path, tags={
+            'XMP:RegionName': names,
+            'XMP:RegionType': types,
+            'XMP:RegionRectangle': rectangles,
+            'XMP:RegionPersonDisplayName': names,
+        })
+        et.terminate()
 
 
 def picasa_format(rectangle_digiKam):
@@ -130,15 +133,16 @@ def picasa_format(rectangle_digiKam):
 
 
 def convert_digiKam_tags_to_picasa(path) -> List[str]:
-    et = get_exiftool()
-    picasa_faces = []
-    for tags in et.get_tags(path, ['XMP:RegionName', 'XMP:RegionType', 'XMP:RegionRectangle']):
-        for name, type, rectangle_digiKam in zip(get_list_str(tags, 'XMP:RegionName'),
-                                                 get_list_str(tags, 'XMP:RegionType'),
-                                                 get_list_str(tags, 'XMP:RegionRectangle')):
-            if type != 'Face':
-                continue
+    with get_exiftool() as et:
+        picasa_faces = []
+        for tags in et.get_tags(path, ['XMP:RegionName', 'XMP:RegionType', 'XMP:RegionRectangle']):
+            for name, type, rectangle_digiKam in zip(get_list_str(tags, 'XMP:RegionName'),
+                                                    get_list_str(tags, 'XMP:RegionType'),
+                                                    get_list_str(tags, 'XMP:RegionRectangle')):
+                if type != 'Face':
+                    continue
 
-            picasa = picasa_format(rectangle_digiKam)
-            picasa_faces.append(f'{name}({picasa})')
-    return picasa_faces
+                picasa = picasa_format(rectangle_digiKam)
+                picasa_faces.append(f'{name}({picasa})')
+        et.terminate()
+        return picasa_faces

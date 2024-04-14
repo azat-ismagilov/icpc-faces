@@ -21,22 +21,22 @@ def main():
         writer = csv.writer(f, delimiter='\t', quotechar='"',
                             lineterminator='\n', quoting=csv.QUOTE_ALL)
         for path in find_photos_in_directory(args.dir):
-            try:
-                tags = [args.album_tag] + \
-                    get_tags_from_photo(path) + \
-                    get_tags_from_path(args.dir, path) + \
-                    convert_digiKam_tags_to_picasa(path)
+            # try:
+            tags = [args.album] + \
+                get_tags_from_photo(path) + \
+                get_tags_from_path(args.dir, path) + \
+                convert_digiKam_tags_to_picasa(path)
 
-                tags = list(dict.fromkeys(tags))
+            tags = list(dict.fromkeys(tags))
 
-                embed_tags_into_photo(path, tags)
-                embed_picasa_as_digiKam(path, tags)
-                set_description(path, tags)
-                writer.writerow([path] + tags)
-                print('.', end='', flush=True)
-            except Exception:
-                print(path)
-                traceback.print_exc()
+            embed_tags_into_photo(path, tags)
+            embed_picasa_as_digiKam(path, tags)
+            set_description(path, tags)
+            writer.writerow([path] + tags)
+            print('.', end='', flush=True)
+            # except Exception:
+            #     print(path)
+            #     traceback.print_exc()
 
 
 if __name__ == '__main__':

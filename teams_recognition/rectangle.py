@@ -14,6 +14,7 @@ class Box:
     def toPIL(self):
         return (self.left, self.top, self.right, self.bottom)
 
+
 def boxFromFaceLocation(location):
     top, right, bottom, left = location
     return Box(left, top, right, bottom)

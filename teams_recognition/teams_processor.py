@@ -6,6 +6,7 @@ from thefuzz import fuzz, process
 from tqdm import tqdm
 
 import csv
+import os
 import params as params
 from rectangle import Box
 from image_process import GroupImageProcess
@@ -58,6 +59,17 @@ def __custom_substring_scorer(query, check):
 
 
 def __match_team_images(images: List[GroupImageProcess], teams: List[Team]):
+    for (index_image, image) in enumerate(images):
+        team = None 
+        photo_id = images[index_image].path.split(os.sep)[-1].split('.')[0]
+        photo_id = photo_id.removeprefix('team-')
+        if photo_id.startswith('team_'):
+            photo_id = photo_id.split('_')[1]
+    
+        for team in teams:
+            if photo_id == team.id:
+                images[index_image].team = team
+    return
     ocr_candidates = [(text, i)
                       for i in range(len(images))
                       for (_, text) in images[i].ocr]

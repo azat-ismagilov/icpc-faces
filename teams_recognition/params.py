@@ -9,9 +9,9 @@ class Reader:
     __reader = None
 
     def readtext(image):
-        if __reader == None:
-            __reader = easyocr.Reader(['en'])
-        return __reader.readtext(image,
+        if Reader.__reader == None:
+            Reader.__reader = easyocr.Reader(['en'])
+        return Reader.__reader.readtext(image,
                                  add_margin=0.2,
                                  text_threshold=0.6, paragraph=True,
                                  canvas_size=1280,

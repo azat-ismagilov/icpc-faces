@@ -51,13 +51,13 @@ def main():
         people = []
         for tag in tags:
             if tag.startswith("team$"):
-                teamName = tag.removeprefix("team$")
+                teamName = tag[5:]
                 for possibleTeam in teams:
                     if possibleTeam.name == teamName:
                         team = possibleTeam
             if re.match(r".*\([0-9a-f]{16}\)", tag):
                 name, rest = tag.split("(", 1)
-                people.append((name, rest[1:-1]))
+                people.append((name, rest[0:-1]))
             else:
                 new_tags.append(tag)
         if team == None:
@@ -82,13 +82,14 @@ def main():
                     for i, possible_person in enumerate(possible_people):
                         print(f"[{i}] {possible_person}")
                         options[str(i)] = possible_person
+                    print("[?] delete")
                     input("Press enter to see the image")
                     image = Image.open(path)
                     if image is None or image.size == 0:
                         return
 
                     draw = ImageDraw.Draw(image)
-                    normal = ImageFont.truetype("arial.ttf", 200)
+                    normal = ImageFont.truetype("arial.ttf", 100)
 
                     width, height = image.size
 
@@ -97,11 +98,16 @@ def main():
                         for i in range(0, len(picasa_format), 4)
                     ]
 
+                    print(left, top, right, bottom)
+                    # right = left + right
+                    # bottom = top + bottom
+                    left = left * width
+                    right = right * width
+                    top = top * height
+                    bottom = bottom * height
+
                     draw.rectangle(
-                        (
-                            (left * width, top * height),
-                            (right * width, bottom * height),
-                        ),
+                        (left, top, right, bottom),
                         outline="green",
                         width=5,
                     )
@@ -121,7 +127,10 @@ def main():
                         os.startfile(imgpath)
                     else:  # linux variants
                         subprocess.call(("xdg-open", imgpath))
-                    name = options[input("Enter a number to select the person")]
+                    choice = input("Enter a number to select the person")
+                    if choice == "?":
+                        continue
+                    name = options[choice]
                     possible_people.remove(name)
             new_tags.append(f"{name}({picasa_format})")
 

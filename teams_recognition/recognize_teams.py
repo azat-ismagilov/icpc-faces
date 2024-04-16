@@ -23,22 +23,21 @@ def main():
                         type=str, help='delimiter for teams file', default=';')
     args = parser.parse_args()
 
-    start = time.time()
-    try:
-        with open('save.pkl', 'rb') as f:
-            images = pickle.load(f)
-        print('You are using precalculated images info. If you want to update your images, please delete save.pkl.')
-    except:
-        image_paths = find_photos_by_tag(args.input_dir)
-        images = [GroupImageProcess(image_path) for image_path in
-                  tqdm(image_paths, desc="Face detection and ocr")]
-        print("Processed all images: {}".format(time.time() - start))
-        with open('save.pkl', 'wb') as f:
-            pickle.dump(images, f)
+    image_paths = find_photos_by_tag(args.input_dir)
+    images = []
+    for image_path in tqdm(image_paths, "Processing and ocr"):
+        pickle_path = image_path + ".pkl"
+        try:
+            with open(pickle_path, 'rb') as f:
+                image = pickle.load(f)
+        except:
+            image = GroupImageProcess(image_path)
+            with open(pickle_path, 'wb') as f:
+                pickle.dump(image, f)
+        images.append(image)
 
     process_teams(args.teams_csv, args.delimiter,
                   args.output_dir, args.tags_file, images)
-    print("Time elapsed: {}".format(time.time() - start))
 
 
 if __name__ == '__main__':

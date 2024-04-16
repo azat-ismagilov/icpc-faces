@@ -60,12 +60,9 @@ def __custom_substring_scorer(query, check):
 
 def __match_team_images(images: List[GroupImageProcess], teams: List[Team]):
     for (index_image, image) in enumerate(images):
-        team = None 
         photo_id = images[index_image].path.split(os.sep)[-1].split('.')[0]
-        photo_id = photo_id.removeprefix('team-')
-        if photo_id.startswith('team_'):
-            photo_id = photo_id.split('_')[1]
-    
+        if photo_id.startswith('team-'):
+            photo_id = photo_id[5:]
         for team in teams:
             if photo_id == team.id:
                 images[index_image].team = team
@@ -114,9 +111,6 @@ def __match_participants(image: GroupImageProcess):
 
             edges_list.append(WeightedBipartiteEdge(index_participant, index_face, score, result))
 
-    if len(edges_list) == 0:
-        return
-
     matching = __max_weight_matching_multi_graph(edges_list)
     for (index_participant, index_face, weight, result) in matching:
         participants[index_participant].face_bbox = image.face_locations[index_face]
@@ -124,6 +118,7 @@ def __match_participants(image: GroupImageProcess):
 
 def process_teams(csv_path, delimiter, output_directory, tags_file, images: List[GroupImageProcess]):
     teams = parse_teams_from_csv(csv_path, delimiter)
+    print([x.id for x in teams])
     with tqdm(desc="Matching teams", total=1) as pbar:
         __match_team_images(images, teams)
         pbar.update(1)

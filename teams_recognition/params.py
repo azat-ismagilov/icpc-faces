@@ -1,6 +1,6 @@
 import easyocr
 
-min_participant_matching_score = 50
+min_participant_matching_score = 20
 min_team_matching_score = 50
 body_to_face_ratio = 1
 

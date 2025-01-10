@@ -1,0 +1,30 @@
+## Contents
+1. [Requirements](#requirements)
+2. [Installation](#installation)
+3. [How to use](#how-to-use)
+4. [Known issues](#known-issues)
+
+## Requirements
+- python (3.4+)
+- pip
+- cmake
+- CUDA (if you want to use GPU)
+
+## Colab
+
+We recommend using Google Colab to get embeddings from photos.
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1VNzQ7px_ATv_37x8_f8QJf2P1t_INTsa?usp=sharing)
+
+## Installation
+```bash
+pip install -r requirements.txt
+```
+
+## How to use:
+
+Set your api keys in `.env` file and run following command.
+
+```bash
+python get_flickr_embeddings.py [-h] album_id user_id [output_file]
+```

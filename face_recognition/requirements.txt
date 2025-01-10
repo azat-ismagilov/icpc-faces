@@ -1,0 +1,7 @@
+python-dotenv
+flickrapi
+requests
+deepface
+Pillow
+numpy
+tqdm

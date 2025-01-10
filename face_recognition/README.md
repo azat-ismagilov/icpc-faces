@@ -23,7 +23,14 @@ pip install -r requirements.txt
 
 ## How to use:
 
-Set your api keys in `.env` file and run following command.
+1. Set your api keys in `.env` file.
+
+```
+FLICKR_API_KEY=...
+FLICKR_API_SECRET=...
+```
+
+2. Run following command.
 
 ```bash
 python get_flickr_embeddings.py [-h] album_id user_id [output_file]

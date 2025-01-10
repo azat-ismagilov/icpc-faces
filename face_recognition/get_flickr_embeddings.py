@@ -19,7 +19,7 @@ def main():
     parser.add_argument('user_id', type=str,
                         help='Id of the flickr owner of the album')
     parser.add_argument('output_file', type=str,
-                        help='Output file with the embeddings', default='embeddings.json')
+                        help='Output file with the embeddings', default='embeddings.json', nargs='?')
     args = parser.parse_args()
 
     flickr = FlickrAPI(api_key=os.getenv('FLICKR_API_KEY'),

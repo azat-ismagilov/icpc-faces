@@ -74,6 +74,18 @@ class BoundingBox:
         left = "%0.4x" % int(self.left * 65535)
         right = "%0.4x" % int(self.right * 65535)
         return left + top + right + bottom
+    
+    def to_json(self, photo_id=None):
+        return {
+            'name': self.person.name,
+            'embeddings': [self.person.embeddings],
+            'bounding_boxes': [
+                {
+                    'bbox': self.to_flickr(),
+                    'photo_id': photo_id,
+                }
+            ]
+        }
 
     @staticmethod
     def from_flickr(flickr_tag: str):

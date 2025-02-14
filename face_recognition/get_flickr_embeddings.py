@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from src.flickr import FlickrAPI
 from src.recognition import get_face_embedding
-from src.utils import is_team_photo, match_boxes
+from src.utils import match_boxes
 
 
 def main():
@@ -14,24 +14,20 @@ def main():
     parser = argparse.ArgumentParser(
         description='Get tags from path',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('album_id', type=str,
-                        help='Id of the flickr album')
-    parser.add_argument('user_id', type=str,
+    parser.add_argument('-user_id', type=str,
                         help='Id of the flickr owner of the album')
-    parser.add_argument('output_file', type=str,
-                        help='Output file with the embeddings', default='embeddings.json', nargs='?')
+    parser.add_argument('-tags', nargs='+', help='Photo tags', required=True)
+    parser.add_argument('-output_file', type=str,
+                        help='Output file with the embeddings', default='embeddings.json')
     args = parser.parse_args()
 
     flickr = FlickrAPI(api_key=os.getenv('FLICKR_API_KEY'),
                        api_secret=os.getenv('FLICKR_API_SECRET'))
-    album = flickr.get_album(args.album_id, args.user_id)
+    photos = flickr.walk(args.user_id, args.tags)
 
     embeddings = []
 
-    for photo in tqdm(album.photos):
-        if not is_team_photo(flickr.get_tags(photo)):
-            continue
-        
+    for photo in tqdm(photos, desc="Get embeddings"):
         bb_flickr = flickr.get_bounding_boxes(photo)
         bb_recognition = get_face_embedding(photo)
         matches = match_boxes(bb_flickr, bb_recognition)
@@ -41,10 +37,7 @@ def main():
             'embeddings': [bb.person.embeddings],
             'bounding_boxes': [
                 {
-                    'left': bb.left,
-                    'top': bb.top,
-                    'right': bb.right,
-                    'bottom': bb.bottom,
+                    'bbox': bb.to_flickr(),
                     'photo_id': photo.id,
                 }
             ]

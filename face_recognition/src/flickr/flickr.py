@@ -4,6 +4,7 @@ import flickrapi
 from src.utils import BoundingBox
 from src.flickr.album import FlickrAlbum
 from src.utils import FlickrPhoto
+from src.flickr.walk_result import FlickrWalk
 
 class FlickrAPI:
     def __init__(self, api_key, api_secret):
@@ -15,12 +16,28 @@ class FlickrAPI:
             api_secret (str): The API secret.
         """
 
+        self.api_key = api_key
+        self.api_secret = api_secret
+
         try:
             self.flickr = flickrapi.FlickrAPI(
                 api_key, api_secret, format='parsed-json'
             )
         except flickrapi.exceptions.FlickrError as e:
             print(f"Error initializing Flickr API: {e}")
+    
+    def walk(self, user_id: str, tags: list) -> FlickrWalk:
+        """
+        Walk throw user photos.
+
+        Input:
+            user_id (str): The ID of the user who owns the album.
+            tags (list): list of photo tags.
+        Output:
+            FlickrAlbum: The album.
+        """
+
+        return FlickrWalk(flickrapi.FlickrAPI(self.api_key, self.api_secret, format='etree'), user_id, tags)
     
     def get_album(self, album_id: str, user_id: str) -> FlickrAlbum:
         """

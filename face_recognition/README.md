@@ -30,8 +30,8 @@ FLICKR_API_KEY=...
 FLICKR_API_SECRET=...
 ```
 
-2. Run following command.
+2. Run following command. Specify user_id(from flickr) and tags(to specify photos to get embeddings from).
 
 ```bash
-python get_flickr_embeddings.py [-h] album_id user_id [output_file]
+python get_flickr_embeddings.py [-h] -user_id -tags [-output_file]
 ```

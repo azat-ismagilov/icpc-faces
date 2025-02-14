@@ -33,5 +33,7 @@ FLICKR_API_SECRET=...
 2. Run following command. Specify user_id(from flickr) and tags(to specify photos to get embeddings from).
 
 ```bash
-python get_flickr_embeddings.py [-h] -user_id -tags [-output_file]
+python get_flickr_embeddings.py [-h] -user_id -tags [-output_file] [-raw_embeddings]
 ```
+
+Using -raw_embeddings option, you can get all bounding boxes from photos, even without names.

@@ -131,3 +131,9 @@ dmypy.json
 output*/
 unused/
 *.pkl
+
+# VS Code settings
+.vscode/
+
+# macOS Finder files
+.DS_Store

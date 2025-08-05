@@ -5,3 +5,4 @@ deepface
 Pillow
 numpy
 tqdm
+flask

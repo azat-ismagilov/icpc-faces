@@ -86,6 +86,12 @@ class BoundingBox:
                 }
             ]
         }
+    
+    @staticmethod
+    def from_flickr_bbox(flickr_bbox: str):
+        left, top, right, bottom = [int(flickr_bbox[i:i+4], 16) / 65535
+                                    for i in range(0, len(flickr_bbox), 4)]
+        return BoundingBox(left, top, right, bottom, Person(None, None))
 
     @staticmethod
     def from_flickr(flickr_tag: str):

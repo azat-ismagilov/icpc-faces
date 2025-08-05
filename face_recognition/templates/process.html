@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Выбор картинки</title>
+    <script>
+        function sendChoice(choice) {
+            let body = '';
+            if (choice === 'custom') {
+                const customName = document.getElementById('custom_name').value;
+                body = `choice=&custom_name=${encodeURIComponent(customName)}&skip=`;
+            } else if (typeof choice === 'number') {
+                // Выбрана референсная картинка по номеру
+                body = `choice=${choice}&custom_name=&skip=`;
+            }
+            
+            fetch('/choose', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: body
+            }).then(r => r.json()).then(data => {
+                if (data.done) {
+                    window.location.href = '/process';
+                } else {
+                    // Update page with new images and captions
+                    location.reload();
+                }
+            });
+        }
+        
+        function skip() {
+            fetch('/choose', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'choice=&custom_name=&skip=true'
+            }).then(r => r.json()).then(data => {
+                if (data.done) {
+                    window.location.href = '/process';
+                } else {
+                    location.reload();
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h2>Основная картинка</h2>
+    <img src="/{{ main_img }}" width="300"><br><br>
+    <h3>Референсные картинки</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+        {% for ref in refs %}
+            <div style="border: 1px solid #ccc; padding: 10px; text-align: center; width: 220px;">
+                <img src="/{{ ref }}" width="200"><br>
+                <p style="margin: 10px 0; font-style: italic; color: #666;">{{ ref_captions[loop.index0] }}</p>
+                <button onclick="sendChoice({{ loop.index }})">Выбрать</button>
+            </div>
+        {% endfor %}
+    </div>
+    <br>
+    <input type="text" id="custom_name" placeholder="Ввести имя вручную">
+    <button onclick="sendChoice('custom')">Отправить имя</button>
+    <button onclick="skip()">Пропустить</button>
+</body>
+</html>

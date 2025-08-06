@@ -45,13 +45,16 @@
 </head>
 <body>
     <h2>Основная картинка</h2>
-    <img src="/{{ main_img }}" width="300"><br><br>
+    <div style="text-align: center; margin-bottom: 30px; border: 2px solid #ddd; padding: 20px; background-color: #f9f9f9;">
+        <img src="/{{ main_img }}" width="512"><br>
+        <p style="margin: 15px 0; font-style: italic; color: #333; font-size: 18px; font-weight: bold; background-color: #fff; padding: 10px; border-radius: 5px;">{{ main_img_caption }}</p>
+    </div>
     <h3>Референсные картинки</h3>
     <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
         {% for ref in refs %}
-            <div style="border: 1px solid #ccc; padding: 10px; text-align: center; width: 220px;">
+            <div style="border: 2px solid #ccc; padding: 15px; text-align: center; width: 220px; background-color: #f9f9f9;">
                 <img src="/{{ ref }}" width="200"><br>
-                <p style="margin: 10px 0; font-style: italic; color: #666;">{{ ref_captions[loop.index0] }}</p>
+                <p style="margin: 15px 0; font-style: italic; color: #333; font-size: 14px; font-weight: bold; background-color: #fff; padding: 8px; border-radius: 5px; min-height: 20px;">{{ ref_captions[loop.index0] }}</p>
                 <button onclick="sendChoice({{ loop.index }})">Выбрать</button>
             </div>
         {% endfor %}

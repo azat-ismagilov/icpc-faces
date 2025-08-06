@@ -15,4 +15,4 @@ def get_k_similar_faces(request_embedding: np.ndarray, faces_embeddings: np.ndar
     
     # Get the indices of the k most similar faces
     k_indices = similarities.argsort()[:k]
-    return k_indices
+    return k_indices, similarities[k_indices].tolist()

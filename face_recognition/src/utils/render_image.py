@@ -5,12 +5,11 @@ import requests
 from PIL import Image, ImageDraw
 from io import BytesIO
 
-def download_image_from_flickr(username: str, photo_id: str) -> Image.Image:
+def download_image_from_flickr(photo_id: str) -> Image.Image:
     """
-    Download an image from Flickr using username and photo ID.
-    
+    Download an image from Flickr using photo ID.
+
     Args:
-        username: Flickr username
         photo_id: ID of the photo to download
         api_key: Flickr API key
         api_secret: Flickr API secret
@@ -24,9 +23,12 @@ def download_image_from_flickr(username: str, photo_id: str) -> Image.Image:
     # Get available sizes for the photo
     sizes = flickr.photos.getSizes(photo_id=photo_id)
     
-    # Find the largest available size
-    largest_size = max(sizes['sizes']['size'], key=lambda x: int(x['width']) * int(x['height']))
-    image_url = largest_size['source']
+    # Find the size closest to 1024 pixels (by width or height)
+    target_size = 1024
+    available_sizes = sizes['sizes']['size']
+    
+    best_size = min(available_sizes, key=lambda x: abs(max(int(x['width']), int(x['height'])) - target_size))
+    image_url = best_size['source']
     
     # Download the image
     response = requests.get(image_url)
@@ -40,7 +42,7 @@ def render_image(state: dict, cut: bool = False, path: str = 'static') -> str:
     flickr_bb = state['bounding_boxes'][0]['bbox']
     bounding_box = BoundingBox.from_flickr_bbox(flickr_bb)
     photo_id = state['bounding_boxes'][0]['photo_id']
-    photo = download_image_from_flickr("icpcnews", photo_id)
+    photo = download_image_from_flickr(photo_id)
     if cut:
         # Crop the image to the bounding box
         left = int(bounding_box.left * photo.width)

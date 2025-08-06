@@ -18,6 +18,7 @@ backend_state = {
     'step': 0,
     'finished': False,
     'main_img': None,
+    'main_img_caption': '',
     'refs': [],
     'ref_captions': [],
     'state': {},
@@ -33,12 +34,13 @@ def update_state():
         if img.is_file() and img.suffix in ['.jpg', '.jpeg', '.png']:
             os.remove(img)
 
-    state, similar_faces, similar_faces_indices = MAIN_QUEUE.get()
+    state, similar_faces, similar_faces_indices, similarities = MAIN_QUEUE.get()
     backend_state['step'] += 1
     backend_state['state'] = state
     backend_state['refs'] = [render_image(ref, True, app.config['IMAGE_FOLDER']) for ref in similar_faces]
-    backend_state['ref_captions'] = [ref['name'] for ref in similar_faces]
+    backend_state['ref_captions'] = [ref['name'] + f' (Similarity: {(2 - similarities[i]) / 2:.2f})' for i, ref in enumerate(similar_faces)]
     backend_state['main_img'] = render_image(state, False, app.config['IMAGE_FOLDER'])
+    backend_state['main_img_caption'] = state.get('name', '')
     backend_state['indices'] = similar_faces_indices
     backend_state['finished'] = True if state == {} else False
 
@@ -74,6 +76,7 @@ def process():
         return render_template('done.html')
     return render_template('process.html', 
                          main_img=backend_state['main_img'], 
+                         main_img_caption=backend_state['main_img_caption'],
                          refs=backend_state['refs'],
                          ref_captions=backend_state['ref_captions'])
 
@@ -95,7 +98,7 @@ def choose():
     
     
     update_state()
-    return jsonify({'done': False, 'main_img': backend_state['main_img'], 'refs': backend_state['refs'], 'ref_captions': backend_state['ref_captions']})
+    return jsonify({'done': False, 'main_img': backend_state['main_img'], 'main_img_caption': backend_state['main_img_caption'], 'refs': backend_state['refs'], 'ref_captions': backend_state['ref_captions']})
 
 @app.route('/status', methods=['GET'])
 def status():

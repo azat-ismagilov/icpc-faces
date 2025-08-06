@@ -46,13 +46,13 @@ class UpdateQueue:
         new_state = self.queue.get()
         embeddings_matrix = self.database.get_embeddings()
 
-        similar_faces = get_k_similar_faces(
+        similar_faces, similarities = get_k_similar_faces(
             request_embedding=np.array(new_state['embeddings'][0]),
             faces_embeddings=embeddings_matrix,
             k=self.num_faces_show
         )
 
-        return new_state, [self.database.get(idx) for idx in similar_faces], similar_faces.tolist()
+        return new_state, [self.database.get(idx) for idx in similar_faces], similar_faces.tolist(), similarities
     
     def update(self, data: dict, name: str = None, idx: int = None):
         """
@@ -62,7 +62,7 @@ class UpdateQueue:
         :param idx: Optional index for the data.
         :return: None
         """
-        assert name is None and idx is None, "Name or index should be provided for update."
+        assert name is not None or idx is not None, "Name or index should be provided for update."
 
         if idx is not None:
             data['name'] = self.database.get(idx)['name'] if name is None else name

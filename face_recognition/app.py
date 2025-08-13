@@ -1,6 +1,7 @@
 from pathlib import Path
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory
 import os
+import argparse
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
@@ -12,24 +13,8 @@ import shutil
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['IMAGE_FOLDER'] = 'static'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['IMAGE_FOLDER'], exist_ok=True)
-SESSION_BASE = os.path.join(app.config['IMAGE_FOLDER'], 'sessions')
-os.makedirs(SESSION_BASE, exist_ok=True)
-
-# Mock backend state
-backend_state = {
-    'step': 0,
-    'finished': False,
-    'main_img': None,
-    'main_img_caption': '',
-    'refs': [],
-    'ref_captions': [],
-    'state': {},
-    'indices': [],
-}
+# Configuration will be initialized in __main__ after parsing env/CLI
+# Remove global config constants and directory creation from here.
 
 MAIN_QUEUE = None
 QUEUE_LOCK = threading.Lock()
@@ -38,7 +23,7 @@ SESSIONS = {}  # sid -> {folder, timer, state, refs, ref_captions, indices, main
 # --- Session helpers ---
 
 def _session_folder(sid: str) -> str:
-    return os.path.join(SESSION_BASE, sid)
+    return os.path.join(app.config['SESSION_BASE'], sid)
 
 
 def _cleanup_folder(folder: str):
@@ -49,10 +34,12 @@ def _cleanup_folder(folder: str):
             pass
 
 
-def _reset_session_timer(sid: str, seconds: int = 300):
+def _reset_session_timer(sid: str, seconds: int = None):
     sess = SESSIONS.get(sid)
     if not sess:
         return
+    if seconds is None:
+        seconds = app.config['SESSION_TIMEOUT_SECONDS']
     # cancel old
     t = sess.get('timer')
     if t:
@@ -197,7 +184,7 @@ def _create_session() -> str:
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    global MAIN_QUEUE, backend_state
+    global MAIN_QUEUE
 
     if request.method == 'POST':
         file1 = request.files.get('file1')
@@ -213,7 +200,7 @@ def index():
             # Initialize backend state with uploaded images
             database = DataBase(path1)
             with QUEUE_LOCK:
-                MAIN_QUEUE = UpdateQueue(database, path2)
+                MAIN_QUEUE = UpdateQueue(database, path2, num_faces_show=app.config['CANDIDATES_TO_SHOW'])
             # Reset any active sessions and their timers/files
             _clear_all_sessions()
             # Do not prefetch a state here; users should go to /new
@@ -257,6 +244,8 @@ def process_session(sid):
         ref_captions=sess['ref_captions'],
         ref_names=sess['ref_names'],
         session_id=sid,
+        max_candidates=app.config['CANDIDATES_TO_SHOW'],
+        keyboard_max=min(9, app.config['CANDIDATES_TO_SHOW']),
     )
 
 
@@ -351,4 +340,38 @@ def status(sid):
 
 if __name__ == '__main__':
     load_dotenv()  # Load environment variables from .env file if needed
-    app.run(host='0.0.0.0', port=8081, debug=True)
+
+    parser = argparse.ArgumentParser(
+        description='Run face recognition web app',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    # Defaults from env
+    env_host = os.getenv('APP_HOST', '0.0.0.0')
+    env_port = int(os.getenv('APP_PORT', '8081'))
+    env_timeout = int(os.getenv('SESSION_TIMEOUT_SECONDS', '300'))
+    env_candidates = int(os.getenv('CANDIDATES_TO_SHOW', '5'))
+
+    parser.add_argument('--host', type=str, default=env_host, help='Server host')
+    parser.add_argument('--port', type=int, default=env_port, help='Server port')
+    parser.add_argument('--session-timeout-seconds', type=int, default=env_timeout, help='Seconds of inactivity before session is canceled')
+    parser.add_argument('--candidates-to-show', type=int, default=env_candidates, help='Number of candidates shown on the right panel')
+    parser.add_argument('--upload-folder', type=str, default=os.getenv('UPLOAD_FOLDER', 'static/uploads'), help='Path to uploads folder')
+    parser.add_argument('--image-folder', type=str, default=os.getenv('IMAGE_FOLDER', 'static'), help='Path to images folder')
+    args = parser.parse_args()
+
+    # Apply config
+    app.config.update({
+        'APP_HOST': args.host,
+        'APP_PORT': args.port,
+        'SESSION_TIMEOUT_SECONDS': args.session_timeout_seconds,
+        'CANDIDATES_TO_SHOW': args.candidates_to_show,
+        'UPLOAD_FOLDER': args.upload_folder,
+        'IMAGE_FOLDER': args.image_folder,
+    })
+    # Derived paths and ensure directories exist
+    app.config['SESSION_BASE'] = os.path.join(app.config['IMAGE_FOLDER'], 'sessions')
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['IMAGE_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['SESSION_BASE'], exist_ok=True)
+
+    app.run(host=app.config['APP_HOST'], port=app.config['APP_PORT'], debug=True)

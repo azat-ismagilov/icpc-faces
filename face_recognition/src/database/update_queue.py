@@ -1,8 +1,7 @@
 import json
 import numpy as np
-from queue import Queue
 
-from src.recognition import get_k_similar_faces
+from src.recognition import get_k_similar_faces, get_group
 from src.database import DataBase
 
 class UpdateQueue:
@@ -18,7 +17,8 @@ class UpdateQueue:
         self.num_faces_show = num_faces_show
         self.new_data_path = new_data_path
         self.log_path = log_path
-        self.queue = Queue()
+        self.queue = []
+        self.queue_embeddings = None
 
         self.__load_new_data()
 
@@ -32,27 +32,35 @@ class UpdateQueue:
             new_data = json.load(file)
         
         for item in new_data:
-            self.queue.put(item)
+            self.queue.append(item)
+        
+        self.queue_embeddings = np.array([item['embeddings'][0] for item in new_data])
 
     def get(self):
         """
         Get the next item from the queue.
-        :return: A tuple containing the new state, a list of similar faces and indices.
+        :return: A tuple containing the new state, a list of similar faces, indices and similarity score.
         """
 
-        if self.queue.empty():
-            return {}, [], []
+        if not self.queue:
+            return [], [], [], []
 
-        new_state = self.queue.get()
+        new_embedding = self.queue_embeddings[0,:]
         embeddings_matrix = self.database.get_embeddings()
 
         similar_faces, similarities = get_k_similar_faces(
-            request_embedding=np.array(new_state['embeddings'][0]),
+            request_embedding=new_embedding,
             faces_embeddings=embeddings_matrix,
             k=self.num_faces_show
         )
 
-        return new_state, [self.database.get(idx) for idx in similar_faces], similar_faces.tolist(), similarities
+        group_idx = get_group(new_embedding, self.queue_embeddings)
+        batch_states = [self.queue[i] for i in group_idx]
+
+        self.queue = [self.queue[i] for i in range(len(self.queue)) if i not in group_idx]
+        self.queue_embeddings = np.delete(self.queue_embeddings, group_idx, axis=0)
+
+        return batch_states, [self.database.get(idx) for idx in similar_faces], similar_faces.tolist(), similarities
     
     def update(self, data: dict, name: str = None, idx: int = None):
         """
@@ -79,7 +87,8 @@ class UpdateQueue:
         :param data: The data to be put back into the queue.
         :return: None
         """
-        self.queue.put(data)
+        self.queue.append(data)
+        self.queue_embeddings = np.vstack((self.queue_embeddings, np.array(data['embeddings'][0])))
 
     def log(self, data: dict):
         """
@@ -89,3 +98,39 @@ class UpdateQueue:
         """
         with open(self.log_path, 'a') as log_file:
             log_file.write(json.dumps(data) + '\n')
+
+    @staticmethod
+    def combine_group(group: list, name: str = None):
+        """
+        Combine a group of faces into a single entry in the database.
+        :param group: List of indices of faces to be combined.
+        :param name: Optional name for the combined entry.
+        :return: None
+        """
+
+        result = group[0]
+
+        for object in group[1:]:
+            result['embeddings'].extend(object['embeddings'])
+            result['bounding_boxes'].extend(object['bounding_boxes'])
+
+        if name is not None:
+            result['name'] = name
+
+        return result
+    
+    def compute_similar(self, data: dict):
+        """
+        Compute similar faces for the given data.
+        :param data: The data for which similar faces are to be computed.
+        :return: A tuple containing the new state, a list of similar faces and indices.
+        """
+        embeddings_matrix = self.database.get_embeddings()
+
+        similar_faces, similarities = get_k_similar_faces(
+            request_embedding=np.array(data['embeddings'][0]),
+            faces_embeddings=embeddings_matrix,
+            k=self.num_faces_show
+        )
+
+        return [self.database.get(idx) for idx in similar_faces], similar_faces.tolist(), similarities

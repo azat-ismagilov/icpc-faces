@@ -1,67 +1,190 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Выбор картинки</title>
+    <title>Selection</title>
+    <style>
+        :root { --bg:#0f1115; --panel:#151923; --border:#2a3246; --text:#e6e6e6; --muted:#9aa4b2; --primary:#3b82f6; --primary-strong:#1d4ed8; }
+        * { box-sizing: border-box; }
+        html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+        .layout { display:grid; grid-template-columns: 1fr 460px; gap:16px; height:100vh; padding:16px; }
+        .panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px; min-height:0; }
+        .main { display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
+        .main img { max-width:100%; max-height: calc(100vh - 56px); object-fit: contain; border-radius:8px; border:1px solid var(--border); background:#0b0e14; }
+        .caption { margin-top:8px; color:var(--muted); font-weight:600; text-align:center; }
+        .right { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; overflow:hidden; align-content:start; }
+        .ref { display:flex; gap:10px; align-items:center; padding:8px; border:1px solid var(--border); border-radius:10px; background:#0f131d; min-height:88px; }
+        .ref.selected { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59,130,246,0.25) inset; }
+        .ref img { width:84px; height:84px; object-fit:cover; border-radius:8px; border:1px solid var(--border); background:#0b0e14; }
+        .ref .meta { flex:1; min-width:0; }
+        .ref .name { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ref .hint { color:var(--muted); font-size:12px; }
+        .kbd { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 6px; border:1px solid var(--border); border-bottom-width:3px; border-radius:6px; font-weight:800; background:#0b0e14; }
+        .actions { display:flex; gap:8px; margin-top:4px; }
+        button { padding:8px 10px; border:none; border-radius:8px; background:var(--primary); color:#fff; font-weight:700; cursor:pointer; }
+        button.secondary { background:#2a3246; }
+        button.choose-btn.selected { background: var(--primary-strong); }
+        .footer { position:fixed; bottom:8px; left:16px; right:16px; display:flex; justify-content:space-between; color:var(--muted); font-size:12px; }
+        .overlay { position:fixed; inset:0; background: rgba(15,17,21,0.85); display:none; align-items:center; justify-content:center; z-index:9999; }
+        .overlay.show { display:flex; }
+        .spinner { width:48px; height:48px; border:4px solid #2a3246; border-top-color:#3b82f6; border-radius:50%; animation: spin 1s linear infinite; }
+        .overlay-text { margin-top:12px; color:#e6e6e6; font-weight:600; text-align:center; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
     <script>
+        const SID = "{{ session_id }}";
+        let selectedIndex = null; // 1..9
+        function showOverlay(text) {
+            const ov = document.getElementById('overlay');
+            const t = document.getElementById('overlay_text');
+            if (t) t.textContent = text || 'Processing...';
+            ov.classList.add('show');
+        }
+        function clearSelection() {
+            selectedIndex = null;
+            document.querySelectorAll('.ref').forEach(card => card.classList.remove('selected'));
+            document.querySelectorAll('.choose-btn').forEach(btn => btn.classList.remove('selected'));
+        }
+        function setSelection(n) {
+            clearSelection();
+            selectedIndex = n;
+            const refCard = document.querySelector(`.ref[data-index="${n}"]`);
+            const btn = document.querySelector(`.choose-btn[data-index="${n}"]`);
+            if (refCard) refCard.classList.add('selected');
+            if (btn) btn.classList.add('selected');
+        }
         function sendChoice(choice) {
+            showOverlay('Processing...');
             let body = '';
             if (choice === 'custom') {
-                const customName = document.getElementById('custom_name').value;
+                const customName = document.getElementById('custom_name').value.trim();
                 body = `choice=&custom_name=${encodeURIComponent(customName)}&skip=`;
             } else if (typeof choice === 'number') {
-                // Выбрана референсная картинка по номеру
                 body = `choice=${choice}&custom_name=&skip=`;
             }
-            
-            fetch('/choose', {
+            fetch(`/choose/${SID}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: body
-            }).then(r => r.json()).then(data => {
-                if (data.done) {
-                    window.location.href = '/process';
-                } else {
-                    // Update page with new images and captions
-                    location.reload();
-                }
+            }).then(r => r.json()).then(() => {
+                // Always reload to show next state
+                location.reload();
+            }).catch(() => {
+                location.reload();
             });
         }
-        
         function skip() {
-            fetch('/choose', {
+            showOverlay('Skipping...');
+            fetch(`/choose/${SID}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'choice=&custom_name=&skip=true'
-            }).then(r => r.json()).then(data => {
-                if (data.done) {
-                    window.location.href = '/process';
-                } else {
-                    location.reload();
-                }
+            }).then(r => r.json()).then(() => {
+                location.reload();
+            }).catch(() => {
+                location.reload();
             });
         }
+        function confirmSelection() {
+            // Change priority: custom name first, then selected card
+            const v = document.getElementById('custom_name').value.trim();
+            if (v) {
+                sendChoice('custom');
+                return;
+            }
+            if (selectedIndex) {
+                sendChoice(selectedIndex);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            // Click handlers
+            document.querySelectorAll('.choose-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const n = Number(btn.dataset.index);
+                    if (!Number.isNaN(n)) setSelection(n);
+                });
+            });
+            document.getElementById('confirm_btn')?.addEventListener('click', confirmSelection);
+            document.getElementById('skip_btn')?.addEventListener('click', skip);
+
+            // If user starts typing a name, clear any previously selected card
+            const nameInput = document.getElementById('custom_name');
+            if (nameInput) {
+                nameInput.addEventListener('input', () => {
+                    if (selectedIndex) clearSelection();
+                });
+                nameInput.addEventListener('focus', () => {
+                    // Optional: clear on focus to avoid accidental confirm of selection
+                    // if (selectedIndex) clearSelection();
+                });
+            }
+
+            // Hotkeys
+            document.addEventListener('keydown', (e) => {
+                const inputFocused = ['INPUT','TEXTAREA'].includes(e.target.tagName);
+                // 1-5 select only
+                if (!inputFocused && e.key >= '1' && e.key <= '5') {
+                    const n = parseInt(e.key, 10);
+                    setSelection(n);
+                    return;
+                }
+                // 6-9 disabled (do nothing)
+                if (!inputFocused && e.key >= '6' && e.key <= '9') {
+                    return;
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmSelection();
+                    return;
+                }
+                if (!inputFocused && e.key === ' ') {
+                    e.preventDefault();
+                    skip();
+                }
+            });
+        });
     </script>
 </head>
 <body>
-    <h2>Основная картинка</h2>
-    <div style="text-align: center; margin-bottom: 30px; border: 2px solid #ddd; padding: 20px; background-color: #f9f9f9;">
-        <img src="/{{ main_img }}" width="512"><br>
-        <p style="margin: 15px 0; font-style: italic; color: #333; font-size: 18px; font-weight: bold; background-color: #fff; padding: 10px; border-radius: 5px;">{{ main_img_caption }}</p>
-    </div>
-    <h3>Референсные картинки</h3>
-    <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-        {% for ref in refs %}
-            <div style="border: 2px solid #ccc; padding: 15px; text-align: center; width: 220px; background-color: #f9f9f9;">
-                <img src="/{{ ref }}" width="200"><br>
-                <p style="margin: 15px 0; font-style: italic; color: #333; font-size: 14px; font-weight: bold; background-color: #fff; padding: 8px; border-radius: 5px; min-height: 20px;">{{ ref_captions[loop.index0] }}</p>
-                <button onclick="sendChoice({{ loop.index }})">Выбрать</button>
+    <div class="layout">
+        <div class="panel main">
+            <img src="/{{ main_img }}" alt="Main">
+            <div class="caption">{{ main_img_caption }}</div>
+        </div>
+        <div class="panel right">
+            {% for ref in refs[:9] %}
+            <div class="ref" data-index="{{ loop.index }}">
+                <div class="kbd">{{ loop.index }}</div>
+                <img src="/{{ ref }}" alt="Ref {{ loop.index }}">
+                <div class="meta">
+                    <div class="name">{{ ref_names[loop.index0] }}</div>
+                    <div class="hint">{% if loop.index <= 5 %}Press {{ loop.index }} to select (Confirm to apply){% else %}Use mouse to select{% endif %}</div>
+                </div>
+                <div class="actions">
+                    <button class="choose-btn" data-index="{{ loop.index }}">Select</button>
+                </div>
             </div>
-        {% endfor %}
+            {% endfor %}
+            <div style="grid-column: 1 / -1; margin-top:4px;">
+                <input type="text" id="custom_name" placeholder="Type a name and press Enter" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f131d; color:var(--text);">
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button id="confirm_btn">Confirm (Enter)</button>
+                    <button id="skip_btn" class="secondary">Skip (Space)</button>
+                </div>
+            </div>
+        </div>
     </div>
-    <br>
-    <input type="text" id="custom_name" placeholder="Ввести имя вручную">
-    <button onclick="sendChoice('custom')">Отправить имя</button>
-    <button onclick="skip()">Пропустить</button>
+
+    <div id="overlay" class="overlay" aria-hidden="true">
+        <div style="display:flex; flex-direction:column; align-items:center;">
+            <div class="spinner" aria-label="Loading"></div>
+            <div id="overlay_text" class="overlay-text">Processing...</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div>Shortcuts: 1-5 select (then Confirm) • Enter confirm • Space skip</div>
+        <div><a href="/new" style="color:var(--muted); text-decoration:none;">New session</a></div>
+    </div>
 </body>
 </html>

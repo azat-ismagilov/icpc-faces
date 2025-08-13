@@ -33,6 +33,7 @@
     </style>
     <script>
         const SID = "{{ session_id }}";
+        const KEYBOARD_MAX = Number('{{ keyboard_max|int }}');
         let selectedIndex = null; // 1..9
         function showOverlay(text) {
             const ov = document.getElementById('overlay');
@@ -122,14 +123,11 @@
             // Hotkeys
             document.addEventListener('keydown', (e) => {
                 const inputFocused = ['INPUT','TEXTAREA'].includes(e.target.tagName);
-                // 1-5 select only
-                if (!inputFocused && e.key >= '1' && e.key <= '5') {
+                if (!inputFocused && e.key >= '1' && e.key <= '9') {
                     const n = parseInt(e.key, 10);
-                    setSelection(n);
-                    return;
-                }
-                // 6-9 disabled (do nothing)
-                if (!inputFocused && e.key >= '6' && e.key <= '9') {
+                    if (n >= 1 && n <= KEYBOARD_MAX) {
+                        setSelection(n);
+                    }
                     return;
                 }
                 if (e.key === 'Enter') {
@@ -158,7 +156,7 @@
                 <img src="/{{ ref }}" alt="Ref {{ loop.index }}">
                 <div class="meta">
                     <div class="name">{{ ref_names[loop.index0] }}</div>
-                    <div class="hint">{% if loop.index <= 5 %}Press {{ loop.index }} to select (Confirm to apply){% else %}Use mouse to select{% endif %}</div>
+                    <div class="hint">{% if loop.index <= keyboard_max %}Press {{ loop.index }} to select (Confirm to apply){% else %}Use mouse to select{% endif %}</div>
                 </div>
                 <div class="actions">
                     <button class="choose-btn" data-index="{{ loop.index }}">Select</button>
@@ -183,7 +181,7 @@
     </div>
 
     <div class="footer">
-        <div>Shortcuts: 1-5 select (then Confirm) • Enter confirm • Space skip</div>
+        <div>Shortcuts: 1-{{ keyboard_max }} select (then Confirm) • Enter confirm • Space skip</div>
         <div><a href="/new" style="color:var(--muted); text-decoration:none;">New session</a></div>
     </div>
 </body>

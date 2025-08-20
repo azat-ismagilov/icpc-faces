@@ -5,7 +5,7 @@ from src.recognition import get_k_similar_faces, get_group
 from src.database import DataBase
 
 class UpdateQueue:
-    def __init__(self, database: DataBase, new_data_path: str, num_faces_show: int = 5, log_path: str = 'update_log.txt'):
+    def __init__(self, database: DataBase, new_data_path: str, num_faces_show: int = 5, log_path: str = 'update_log.jsonl'):
         """
         Initialize the UpdateQueue with a database and a new data file.
         :param database: An instance of DataBase to interact with the database.

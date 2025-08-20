@@ -10,7 +10,8 @@ class DataBase:
         self.embedding_matrix = self.__get_embedding_matrix()
 
     def __get_embedding_matrix(self) -> np.ndarray:
-        return np.array([item["embeddings"][0] for item in self.data])
+        embedding_matrix = np.array([item["embeddings"][0] for item in self.data])
+        return embedding_matrix if embedding_matrix.size > 0 else np.empty((0, 128))
 
     def __load_database(self):
         try:
@@ -57,3 +58,10 @@ class DataBase:
     def save(self):
         with open(self.database_path, 'w') as file:
             json.dump(self.data, file, indent=4)
+
+    def __len__(self):
+        """
+        Get the number of items in the database.
+        :return: The number of items in the database.
+        """
+        return len(self.data)

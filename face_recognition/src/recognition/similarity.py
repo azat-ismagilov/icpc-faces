@@ -10,6 +10,10 @@ def get_k_similar_faces(request_embedding: np.ndarray, faces_embeddings: np.ndar
     :return: A list of indices of the k most similar faces.
     """
 
+    if len(faces_embeddings) == 0:
+        return np.array([]), []
+    k = min(k, len(faces_embeddings))
+
     similarities = 1 - np.dot(faces_embeddings, request_embedding).flatten() \
         / np.linalg.norm(faces_embeddings, axis=-1) / np.linalg.norm(request_embedding)
     

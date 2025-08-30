@@ -50,8 +50,8 @@ def render_image(state: dict, cut: bool = False, path: str = 'static') -> str:
         right = int(bounding_box.right * photo.width)
         lower = int(bounding_box.bottom * photo.height)
         photo = photo.crop((left, upper, right, lower))
-        photo.save(f'{path}/{photo_id}.jpg')
-        return f'{path}/{photo_id}.jpg'
+        photo.save(f'{path}/{photo_id}_{bounding_box.to_flickr()}.jpg')
+        return f'{path}/{photo_id}_{bounding_box.to_flickr()}.jpg'
     else:
         # Draw the bounding box on the full image
         draw = ImageDraw.Draw(photo)

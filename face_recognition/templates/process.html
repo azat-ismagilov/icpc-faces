@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+<!DOCTYPE ht    .main img { max-width:100%; max-height: calc(100vh - 56px); object-fit: contain; border-radius:8px; border:1px solid var(--border); background:#0b0e14; cursor:zoom-in; transition: transform 0.2s ease; }
+    .main img.zoomed { cursor:grab; transform-origin: center; }
+    .main img.zoomed:active { cursor:grabbing; }
+    .main img.dragging { transition: none; }>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,8 +12,12 @@
         html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
         .layout { display:grid; grid-template-columns: 1fr 460px; gap:16px; height:100vh; padding:16px; }
         .panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px; min-height:0; }
-        .main { display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
-        .main img { max-width:100%; max-height: calc(100vh - 56px); object-fit: contain; border-radius:8px; border:1px solid var(--border); background:#0b0e14; }
+        .main { display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+        .main img { max-width:100%; max-height: calc(100vh - 56px); object-fit: contain; border-radius:8px; border:1px solid var(--border); background:#0b0e14; cursor:zoom-in; transition: transform 0.2s ease; }
+        .main img.zoomed { cursor:zoom-out; transform-origin: center; }
+        .zoom-controls { position:absolute; top:8px; right:8px; display:flex; gap:4px; z-index:10; }
+        .zoom-btn { padding:4px 8px; border:none; border-radius:6px; background:rgba(59,130,246,0.8); color:#fff; font-weight:700; cursor:pointer; font-size:12px; }
+        .zoom-btn:hover { background:rgba(59,130,246,1); }
         .caption { margin-top:8px; color:var(--muted); font-weight:600; text-align:center; }
         .right { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; overflow:hidden; align-content:start; }
         .ref { display:flex; gap:10px; align-items:center; padding:8px; border:1px solid var(--border); border-radius:10px; background:#0f131d; min-height:88px; }
@@ -35,11 +42,58 @@
         const SID = "{{ session_id }}";
         const KEYBOARD_MAX = Number('{{ keyboard_max|int }}');
         let selectedIndex = null; // 1..9
+        let zoomLevel = 1;
+        let isZoomed = false;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let translateX = 0;
+        let translateY = 0;
+        
         function showOverlay(text) {
             const ov = document.getElementById('overlay');
             const t = document.getElementById('overlay_text');
             if (t) t.textContent = text || 'Processing...';
             ov.classList.add('show');
+        }
+        
+        function zoomIn() {
+            const img = document.querySelector('.main img');
+            if (!img) return;
+            zoomLevel = Math.min(zoomLevel * 1.5, 5);
+            updateTransform(img);
+            img.classList.add('zoomed');
+            isZoomed = true;
+        }
+        
+        function zoomOut() {
+            const img = document.querySelector('.main img');
+            if (!img) return;
+            zoomLevel = Math.max(zoomLevel / 1.5, 1);
+            if (zoomLevel <= 1) {
+                resetZoom();
+            } else {
+                updateTransform(img);
+            }
+        }
+        
+        function resetZoom() {
+            const img = document.querySelector('.main img');
+            if (!img) return;
+            zoomLevel = 1;
+            translateX = 0;
+            translateY = 0;
+            dragOffsetX = 0;
+            dragOffsetY = 0;
+            img.style.transform = '';
+            img.classList.remove('zoomed');
+            isZoomed = false;
+        }
+        
+        function updateTransform(img) {
+            img.style.transform = `scale(${zoomLevel}) translate(${translateX}px, ${translateY}px)`;
         }
         function clearSelection() {
             selectedIndex = null;
@@ -108,6 +162,101 @@
             document.getElementById('confirm_btn')?.addEventListener('click', confirmSelection);
             document.getElementById('skip_btn')?.addEventListener('click', skip);
 
+            // Zoom handlers
+            document.getElementById('zoom_in')?.addEventListener('click', zoomIn);
+            document.getElementById('zoom_out')?.addEventListener('click', zoomOut);
+            document.getElementById('zoom_reset')?.addEventListener('click', resetZoom);
+            
+            // Image click zoom cycle
+            document.querySelector('.main img')?.addEventListener('click', (e) => {
+                if (!isDragging) {
+                    // Cycle through zoom levels: 1x -> 1.5x -> 3x -> 4.5x -> reset
+                    if (zoomLevel <= 1) {
+                        zoomLevel = 1.5;
+                        updateTransform(e.target);
+                        e.target.classList.add('zoomed');
+                        isZoomed = true;
+                    } else if (zoomLevel < 3) {
+                        zoomLevel = 3;
+                        updateTransform(e.target);
+                    } else if (zoomLevel < 4.5) {
+                        zoomLevel = 4.5;
+                        updateTransform(e.target);
+                    } else {
+                        resetZoom();
+                    }
+                }
+            });
+            
+            // Image drag functionality
+            const mainImg = document.querySelector('.main img');
+            if (mainImg) {
+                // Mouse events
+                mainImg.addEventListener('mousedown', (e) => {
+                    if (!isZoomed) return;
+                    isDragging = false;
+                    
+                    // Calculate offset from current mouse position to current image position
+                    dragOffsetX = e.clientX - translateX;
+                    dragOffsetY = e.clientY - translateY;
+                    
+                    mainImg.classList.add('dragging');
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (!isZoomed || !mainImg.classList.contains('dragging')) return;
+                    isDragging = true;
+                    
+                    // Keep the grabbed point under the mouse cursor
+                    translateX = e.clientX - dragOffsetX;
+                    translateY = e.clientY - dragOffsetY;
+                    
+                    updateTransform(mainImg);
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    if (mainImg.classList.contains('dragging')) {
+                        mainImg.classList.remove('dragging');
+                        setTimeout(() => isDragging = false, 10);
+                    }
+                });
+                
+                // Touch events for mobile
+                mainImg.addEventListener('touchstart', (e) => {
+                    if (!isZoomed || e.touches.length !== 1) return;
+                    isDragging = false;
+                    const touch = e.touches[0];
+                    
+                    // Calculate offset from current touch position to current image position
+                    dragOffsetX = touch.clientX - translateX;
+                    dragOffsetY = touch.clientY - translateY;
+                    
+                    mainImg.classList.add('dragging');
+                    e.preventDefault();
+                });
+                
+                mainImg.addEventListener('touchmove', (e) => {
+                    if (!isZoomed || !mainImg.classList.contains('dragging') || e.touches.length !== 1) return;
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    
+                    // Keep the grabbed point under the touch cursor
+                    translateX = touch.clientX - dragOffsetX;
+                    translateY = touch.clientY - dragOffsetY;
+                    
+                    updateTransform(mainImg);
+                    e.preventDefault();
+                });
+                
+                mainImg.addEventListener('touchend', () => {
+                    if (mainImg.classList.contains('dragging')) {
+                        mainImg.classList.remove('dragging');
+                        setTimeout(() => isDragging = false, 10);
+                    }
+                });
+            }
+
             // If user starts typing a name, clear any previously selected card
             const nameInput = document.getElementById('custom_name');
             if (nameInput) {
@@ -146,6 +295,11 @@
 <body>
     <div class="layout">
         <div class="panel main">
+            <div class="zoom-controls">
+                <button id="zoom_in" class="zoom-btn">+</button>
+                <button id="zoom_out" class="zoom-btn">-</button>
+                <button id="zoom_reset" class="zoom-btn">1:1</button>
+            </div>
             <img src="/{{ main_img }}" alt="Main">
             <div class="caption">{{ main_img_caption }}</div>
         </div>

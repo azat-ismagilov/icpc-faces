@@ -9,8 +9,14 @@
     html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
     .layout { display:grid; grid-template-columns: 1fr 480px; gap:16px; height:100vh; padding:16px; }
     .panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px; min-height:0; }
-    .main { display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
-    .main img { max-width:100%; max-height: calc(100vh - 56px); object-fit: contain; border-radius:8px; border:1px solid var(--border); background:#0b0e14; }
+    .main { display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+    .main img { max-width:100%; max-height: calc(100vh - 56px); object-fit: contain; border-radius:8px; border:1px solid var(--border); background:#0b0e14; cursor:zoom-in; transition: transform 0.2s ease; }
+    .main img.zoomed { cursor:grab; transform-origin: center; }
+    .main img.zoomed:active { cursor:grabbing; }
+    .main img.dragging { transition: none; }
+    .zoom-controls { position:absolute; top:8px; right:8px; display:flex; gap:4px; z-index:10; }
+    .zoom-btn { padding:4px 8px; border:none; border-radius:6px; background:rgba(59,130,246,0.8); color:#fff; font-weight:700; cursor:pointer; font-size:12px; }
+    .zoom-btn:hover { background:rgba(59,130,246,1); }
     .caption { margin-top:8px; color:var(--muted); font-weight:600; text-align:center; }
     .right { display:flex; flex-direction:column; gap:10px; overflow:auto; }
     .item { display:flex; gap:10px; align-items:center; padding:8px; border:1px solid var(--border); border-radius:10px; background:#0f131d; cursor:pointer; }
@@ -29,6 +35,16 @@
   <script>
     const SID = "{{ session_id }}";
     const sel = new Set();
+    let zoomLevel = 1;
+    let isZoomed = false;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let translateX = 0;
+    let translateY = 0;
+    
     function toggle(idx){
       const card = document.querySelector(`[data-idx="${idx}"]`);
       if(sel.has(idx)) { sel.delete(idx); card.classList.remove('selected'); }
@@ -39,6 +55,58 @@
       const t = document.getElementById('overlay_text');
       if (t) t.textContent = text || 'Processing...';
       ov.classList.add('show');
+    }
+    
+    function zoomIn() {
+      const img = document.querySelector('.main img');
+      if (!img) return;
+      zoomLevel = Math.min(zoomLevel * 1.5, 5);
+      updateTransform(img);
+      img.classList.add('zoomed');
+      isZoomed = true;
+    }
+    
+    function zoomOut() {
+      const img = document.querySelector('.main img');
+      if (!img) return;
+      zoomLevel = Math.max(zoomLevel / 1.5, 1);
+      if (zoomLevel <= 1) {
+        resetZoom();
+      } else {
+        updateTransform(img);
+      }
+    }
+    
+    function resetZoom() {
+      const img = document.querySelector('.main img');
+      if (!img) return;
+      zoomLevel = 1;
+      translateX = 0;
+      translateY = 0;
+      dragOffsetX = 0;
+      dragOffsetY = 0;
+      img.style.transform = '';
+      img.classList.remove('zoomed');
+      isZoomed = false;
+    }
+    
+    function updateTransform(img) {
+      img.style.transform = `scale(${zoomLevel}) translate(${translateX}px, ${translateY}px)`;
+    }
+    function selectAll(){
+      document.querySelectorAll('.item').forEach(el => {
+        const idx = Number(el.dataset.idx);
+        if (!Number.isNaN(idx)) {
+          sel.add(idx);
+          el.classList.add('selected');
+        }
+      });
+    }
+    function deselectAll(){
+      sel.clear();
+      document.querySelectorAll('.item').forEach(el => {
+        el.classList.remove('selected');
+      });
     }
     function apply(){
       showOverlay('Processing...');
@@ -52,6 +120,28 @@
         if(j.redirect) window.location.href=j.redirect; else window.location.reload();
       }).catch(()=>window.location.reload());
     }
+    function skipGroup(){
+      showOverlay('Skipping...');
+      document.querySelectorAll('button').forEach(b=>b.disabled=true);
+      fetch(`/group/${SID}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`action=skip`
+      }).then(r=>r.json()).then(j=>{
+        if(j.redirect) window.location.href=j.redirect; else window.location.reload();
+      }).catch(()=>window.location.reload());
+    }
+    function deleteGroup(){
+      showOverlay('Deleting...');
+      document.querySelectorAll('button').forEach(b=>b.disabled=true);
+      fetch(`/group/${SID}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`action=delete`
+      }).then(r=>r.json()).then(j=>{
+        if(j.redirect) window.location.href=j.redirect; else window.location.reload();
+      }).catch(()=>window.location.reload());
+    }
     window.addEventListener('DOMContentLoaded', () => {
       // Wire clicks
       document.querySelectorAll('.item').forEach(el => {
@@ -60,20 +150,115 @@
           if (!Number.isNaN(idx)) toggle(idx);
         });
       });
-      // Default: select all
-      document.querySelectorAll('.item').forEach(el => {
-        const idx = Number(el.dataset.idx);
-        if (!Number.isNaN(idx)) {
-          sel.add(idx);
-          el.classList.add('selected');
+      
+      // Zoom handlers
+      document.getElementById('zoom_in')?.addEventListener('click', zoomIn);
+      document.getElementById('zoom_out')?.addEventListener('click', zoomOut);
+      document.getElementById('zoom_reset')?.addEventListener('click', resetZoom);
+      
+      // Image click zoom cycle
+      document.querySelector('.main img')?.addEventListener('click', (e) => {
+        if (!isDragging) {
+          // Cycle through zoom levels: 1x -> 1.5x -> 3x -> 4.5x -> reset
+          if (zoomLevel <= 1) {
+            zoomLevel = 1.5;
+            updateTransform(e.target);
+            e.target.classList.add('zoomed');
+            isZoomed = true;
+          } else if (zoomLevel < 3) {
+            zoomLevel = 3;
+            updateTransform(e.target);
+          } else if (zoomLevel < 4.5) {
+            zoomLevel = 4.5;
+            updateTransform(e.target);
+          } else {
+            resetZoom();
+          }
         }
       });
-      // Hotkeys: 1..N toggle when N < 10, Enter confirm
+      
+      // Image drag functionality
+      const mainImg = document.querySelector('.main img');
+      if (mainImg) {
+        // Mouse events
+        mainImg.addEventListener('mousedown', (e) => {
+          if (!isZoomed) return;
+          isDragging = false;
+          
+          // Calculate offset from current mouse position to current image position
+          dragOffsetX = e.clientX - translateX;
+          dragOffsetY = e.clientY - translateY;
+          
+          mainImg.classList.add('dragging');
+          e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+          if (!isZoomed || !mainImg.classList.contains('dragging')) return;
+          isDragging = true;
+          
+          // Keep the grabbed point under the mouse cursor
+          translateX = e.clientX - dragOffsetX;
+          translateY = e.clientY - dragOffsetY;
+          
+          updateTransform(mainImg);
+        });
+        
+        document.addEventListener('mouseup', () => {
+          if (mainImg.classList.contains('dragging')) {
+            mainImg.classList.remove('dragging');
+            setTimeout(() => isDragging = false, 10);
+          }
+        });
+        
+        // Touch events for mobile
+        mainImg.addEventListener('touchstart', (e) => {
+          if (!isZoomed || e.touches.length !== 1) return;
+          isDragging = false;
+          const touch = e.touches[0];
+          
+          // Calculate offset from current touch position to current image position
+          dragOffsetX = touch.clientX - translateX;
+          dragOffsetY = touch.clientY - translateY;
+          
+          mainImg.classList.add('dragging');
+          e.preventDefault();
+        });
+        
+        mainImg.addEventListener('touchmove', (e) => {
+          if (!isZoomed || !mainImg.classList.contains('dragging') || e.touches.length !== 1) return;
+          isDragging = true;
+          const touch = e.touches[0];
+          
+          // Keep the grabbed point under the touch cursor
+          translateX = touch.clientX - dragOffsetX;
+          translateY = touch.clientY - dragOffsetY;
+          
+          updateTransform(mainImg);
+          e.preventDefault();
+        });
+        
+        mainImg.addEventListener('touchend', () => {
+          if (mainImg.classList.contains('dragging')) {
+            mainImg.classList.remove('dragging');
+            setTimeout(() => isDragging = false, 10);
+          }
+        });
+      }
+      
+      // Default: select all
+      selectAll();
+      // Hotkeys: 1..N toggle when N < 10, Enter confirm, Space skip
       const count = document.querySelectorAll('.item').length;
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           apply();
+          return;
+        }
+        if (e.key === ' ') {
+          e.preventDefault();
+          skipGroup();
           return;
         }
         if (count > 0 && count < 10 && e.key >= '1' && e.key <= '9') {
@@ -90,22 +275,30 @@
 <body>
   <div class="layout">
     <div class="panel main">
+      <div class="zoom-controls">
+        <button id="zoom_in" class="zoom-btn">+</button>
+        <button id="zoom_out" class="zoom-btn">-</button>
+        <button id="zoom_reset" class="zoom-btn">1:1</button>
+      </div>
       <img src="/{{ main_img }}" alt="Main">
       <div class="caption">Reference face</div>
     </div>
     <div class="panel right">
-      <div class="caption" style="margin-bottom:8px;">All candidates are selected by default. Click to deselect those that do not match. {% raw %}(Shortcuts: 1–9 toggle, Enter to confirm){% endraw %}</div>
+      <div class="caption" style="margin-bottom:8px;">MERGING STAGE. Select all faces similar to reference photo. (Shortcuts: 1–9 toggle, Enter to confirm, Space to skip)</div>
       {% for it in items %}
       <div class="item" data-idx="{{ it.idx }}">
         <div class="kbd">{{ it.idx }}</div>
         <img src="/{{ it.img }}" alt="cand {{ it.idx }}">
-        <div style="flex:1;">Candidate {{ it.idx }}</div>
+        <div style="flex:1;">Face {{ it.idx }}</div>
       </div>
       {% endfor %}
     </div>
   </div>
   <div class="controls">
-    <button class="secondary" onclick="window.location.reload()">Reset selection</button>
+    <button class="secondary" onclick="selectAll()">Select All</button>
+    <button class="secondary" onclick="deselectAll()">Deselect All</button>
+    <button class="secondary" onclick="skipGroup()">Skip</button>
+    <button class="secondary" onclick="deleteGroup()">Delete</button>
     <button onclick="apply()">Continue</button>
   </div>
 

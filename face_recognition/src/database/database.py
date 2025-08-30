@@ -10,8 +10,39 @@ class DataBase:
         self.embedding_matrix = self.__get_embedding_matrix()
 
     def __get_embedding_matrix(self) -> np.ndarray:
-        embedding_matrix = np.array([item["embeddings"][0] for item in self.data])
-        return embedding_matrix if embedding_matrix.size > 0 else np.empty((0, 128))
+        embeddings = []
+        for item in self.data:
+            if item.get("embeddings") and item.get("bounding_boxes"):
+                # Find the embedding with the largest bounding box area
+                best_embedding = None
+                max_area = 0
+                
+                for i, bbox_info in enumerate(item["bounding_boxes"]):
+                    if i < len(item["embeddings"]):
+                        # Handle both dict and string bbox formats
+                        if isinstance(bbox_info, dict):
+                            bbox = bbox_info.get("bbox", {})
+                        else:
+                            # If bbox_info is a string, skip it or handle appropriately
+                            continue
+                            
+                        if isinstance(bbox, dict):
+                            width = bbox.get("width", 0) / 100.0  # Convert from percentage
+                            height = bbox.get("height", 0) / 100.0  # Convert from percentage
+                            area = width * height
+                            
+                            if area > max_area:
+                                max_area = area
+                                best_embedding = item["embeddings"][i]
+                
+                # Fallback to first embedding if no valid bbox found
+                if best_embedding is None and item["embeddings"]:
+                    best_embedding = item["embeddings"][0]
+                
+                if best_embedding is not None:
+                    embeddings.append(best_embedding)
+        
+        return np.array(embeddings) if embeddings else np.empty((0, 128))
 
     def __load_database(self):
         try:
@@ -31,13 +62,41 @@ class DataBase:
         """
         if idx == -1:
             self.data.append(new_data)
-            self.embedding_matrix = np.concatenate(
-                (self.embedding_matrix, np.array(new_data["embeddings"][0]).reshape(1, -1)),
-                axis=0
-            )
+            # Find the best embedding (largest face area) for new data
+            best_embedding = None
+            max_area = 0
+            
+            for i, bbox_info in enumerate(new_data.get("bounding_boxes", [])):
+                if i < len(new_data.get("embeddings", [])):
+                    # Handle both dict and string bbox formats
+                    if isinstance(bbox_info, dict):
+                        bbox = bbox_info.get("bbox", {})
+                    else:
+                        continue
+                        
+                    if isinstance(bbox, dict):
+                        width = bbox.get("width", 0) / 100.0
+                        height = bbox.get("height", 0) / 100.0
+                        area = width * height
+                        
+                        if area > max_area:
+                            max_area = area
+                            best_embedding = new_data["embeddings"][i]
+            
+            # Fallback to first embedding if no valid bbox found
+            if best_embedding is None and new_data.get("embeddings"):
+                best_embedding = new_data["embeddings"][0]
+            
+            if best_embedding is not None:
+                self.embedding_matrix = np.concatenate(
+                    (self.embedding_matrix, np.array(best_embedding).reshape(1, -1)),
+                    axis=0
+                )
         else:
             self.data[idx]["embeddings"].extend(new_data.get("embeddings", []))
             self.data[idx]["bounding_boxes"].extend(new_data.get("bounding_boxes", []))
+            # Rebuild embedding matrix to use the largest face for this person
+            self.embedding_matrix = self.__get_embedding_matrix()
         self.save()
 
     def get(self, idx: int) -> dict:
